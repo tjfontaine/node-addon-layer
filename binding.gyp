@@ -1,10 +1,10 @@
 {
   'targets': [
     {
-      'target_name': 'shim',
+      'target_name': 'addon-layer',
+      'type': 'static_library',
       'sources': [
         'src/shim.h',
-        'src/test.c',
         'src/shim.cc',
       ],
     },
