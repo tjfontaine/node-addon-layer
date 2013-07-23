@@ -82,16 +82,14 @@ struct shim_module_struct {
 };
 
 /* Sigh, NODE_MODULE_VERSION isn't in node_version */
-#if NODE_VERSION_AT_LEAST(0, 8, 0)
-#if NODE_VERSION_AT_LEAST(0, 10, 0)
 #if NODE_VERSION_AT_LEAST(0, 11, 5)
 #define SHIM_MODULE_VERSION NODE_MODULE_VERSION
-#else /* 0.11.5 */
+#elif NODE_VERSION_AT_LEAST(0, 11, 0)
 #define SHIM_MODULE_VERSION 0x000C
-#endif /* 0.11.5 */
-#else /* 0.10.0 */
+#elif NODE_VERSION_AT_LEAST(0, 10, 0)
 #define SHIM_MODULE_VERSION 0x000B
-#endif /* 0.10.0 */
+#elif NODE_VERSION_AT_LEAST(0, 8, 0)
+#define SHIM_MODULE_VERSION 1
 #else /* 0.8.0 */
 #error "The shim requires at least node v0.8.0"
 #endif /* 0.8.0 */
