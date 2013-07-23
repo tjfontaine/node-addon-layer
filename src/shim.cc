@@ -21,16 +21,26 @@
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "v8.h"
-#include "node.h"
-
-#include "shim.h"
-
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 
+#include "shim.h"
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+#define V8_USE_UNSAFE_HANDLES 1
+#define V8_ALLOW_ACCESS_TO_RAW_HANDLE_CONSTRUCTOR 1
+#endif
+
+#include "v8.h"
+#include "node.h"
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+using v8::FunctionCallbackInfo;
+#else
 using v8::Arguments;
+#endif
+
 using v8::Array;
 using v8::Exception;
 using v8::External;
@@ -66,6 +76,8 @@ do {} while(0)
 
 namespace shim {
 
+Persistent<String> hidden_private;
+
 void
 shim_cleanup_context(shim_ctx_t *ctx)
 {
@@ -98,12 +110,38 @@ shim_vals_to_handles(size_t argc, shim_val_t** argv)
   return jsargs;
 }
 
+void*
+shim_external_value(Handle<Value> obj)
+{
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  Handle<External> ext = Handle<External>::Cast(obj);
+  return ext->Value();
+#else
+  return External::Unwrap(obj);
+#endif
+}
+
+Local<Value>
+shim_external_new(void *data)
+{
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  return External::New(data);
+#else
+  return External::Wrap(data);
+#endif
+}
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+void
+Static(const FunctionCallbackInfo<Value>& args)
+#else
 Handle<Value>
 Static(const Arguments& args)
+#endif
 {
   SHIM_PROLOGUE;
 
-  shim_func cfunc = reinterpret_cast<shim_func>(External::Unwrap(args.Data()));
+  shim_func cfunc = reinterpret_cast<shim_func>(shim_external_value(args.Data()));
 
   size_t argc = args.Length();
 
@@ -130,17 +168,31 @@ Static(const Arguments& args)
   shim_cleanup_context(&ctx);
   free(argv);
 
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  if (!trycatch.HasCaught())
+    args.GetReturnValue().Set(ret);
+#else
   if (trycatch.HasCaught()) {
     return trycatch.Exception();
   } else {
     return scope.Close(ret);
   }
+#endif
 }
 
 extern "C"
 void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 {
   SHIM_PROLOGUE;
+
+  if (hidden_private.IsEmpty()) {
+    Handle<String> str = String::NewSymbol("shim_private");
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+    hidden_private = Persistent<String>::New(isolate, str);
+#else
+    hidden_private = Persistent<String>::New(str);
+#endif
+  }
 
   shim_val_t sexport;
   sexport.handle = *exports;
@@ -174,20 +226,12 @@ shim_NewObject(shim_ctx_t* ctx, shim_class_t* clas, shim_obj_t* proto,
   return (shim_obj_t*)shim_val_alloc(ctx, obj);
 }
 
-Persistent<String> hidden_private;
-#define PRIVATE_STRING                                                        \
-  if(hidden_private.IsEmpty()) {                                              \
-    Handle<String> str = String::NewSymbol("shim_private");                   \
-    hidden_private = Persistent<String>::New(str);                            \
-  }
-
 extern "C"
 void
 shim_SetPrivate(shim_obj_t* obj, void* data)
 {
   VAL_DEFINE(jsobj, obj);
-  PRIVATE_STRING;
-  jsobj->ToObject()->SetHiddenValue(hidden_private, External::Wrap(data));
+  jsobj->ToObject()->SetHiddenValue(hidden_private, shim_external_new(data));
 }
 
 extern "C"
@@ -217,9 +261,8 @@ void*
 shim_GetPrivate(shim_obj_t* obj)
 {
   VAL_DEFINE(jsobj, obj);
-  PRIVATE_STRING;
   Local<Value> ext = jsobj->ToObject()->GetHiddenValue(hidden_private);
-  return External::Unwrap(ext);
+  return shim::shim_external_value(ext);
 }
 
 extern "C"
@@ -247,7 +290,7 @@ shim_GetPropertyById(shim_ctx_t*, shim_obj_t* obj, uint32_t id,
 Handle<Object>
 shim_HandleFromFunc(shim_func cfunc, const char* name)
 {
-  Local<Value> data = External::Wrap(reinterpret_cast<void*>(cfunc));
+  Local<Value> data = shim_external_new(reinterpret_cast<void*>(cfunc));
   Local<FunctionTemplate> ft = FunctionTemplate::New(shim::Static, data);
   Local<Function> fh = ft->GetFunction();
   fh->SetName(String::New(name));
@@ -509,7 +552,12 @@ shim_AddValueRoot(shim_ctx_t* ctx, shim_val_t* val)
 {
   QUEUE_REMOVE(&val->member);
   VAL_DEFINE(obj, val);
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  val->handle = *Persistent<Value>::New(static_cast<Isolate*>(ctx->isolate),
+    obj);
+#else
   val->handle = *Persistent<Value>::New(obj);
+#endif
   return TRUE;
 }
 
@@ -561,7 +609,7 @@ extern "C"
 shim_val_t*
 shim_NewExternal(shim_ctx_t* ctx, void* data)
 {
-  return shim_val_alloc(ctx, External::Wrap(data));
+  return shim_val_alloc(ctx, shim_external_new(data));
 }
 
 extern "C"
@@ -569,7 +617,7 @@ void*
 shim_ExternalValue(shim_ctx_t* ctx, shim_val_t* obj)
 {
   VAL_DEFINE(jsobj, obj);
-  return External::Unwrap(jsobj);
+  return shim_external_value(jsobj);
 }
 
 typedef struct weak_baton_s {
@@ -578,10 +626,16 @@ typedef struct weak_baton_s {
 } weak_baton_t;
 
 void
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+common_weak_cb(Isolate* iso, Persistent<Value>* pobj, weak_baton_t* baton)
+{
+  Persistent<Value> obj = *pobj;
+#else
 common_weak_cb(Persistent<Value> obj, void* data)
 {
-  SHIM_PROLOGUE;
   weak_baton_t* baton = static_cast<weak_baton_t*>(data);
+#endif
+  SHIM_PROLOGUE;
   shim_val_t* tmp = shim_val_alloc(NULL, obj);
   baton->weak_cb(tmp, baton->data);
   free(tmp);

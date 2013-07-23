@@ -82,7 +82,7 @@ struct shim_module_struct {
 };
 
 /* Sigh, NODE_MODULE_VERSION isn't in node_version */
-#if NODE_VERSION_AT_LEAST(0, 11, 5)
+#if defined(NODE_MODULE_VERSION)
 #define SHIM_MODULE_VERSION NODE_MODULE_VERSION
 #elif NODE_VERSION_AT_LEAST(0, 11, 0)
 #define SHIM_MODULE_VERSION 0x000C
