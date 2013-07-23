@@ -529,8 +529,14 @@ before_work(uv_work_t* req)
 }
 
 void
+#if NODE_VERSION_AT_LEAST(0, 10, 0)
 before_after(uv_work_t* req, int status)
 {
+#else
+before_after(uv_work_t* req)
+{
+  int status = 0;
+#endif
   shim_work_t* work = container_of(req, shim_work_t, req);
   SHIM_PROLOGUE;
   work->after_cb(&ctx, work, status);

@@ -31,6 +31,7 @@ extern "C" {
 #include "stdint.h"
 #include "queue.h"
 #include "uv.h"
+#include "node_version.h"
 
 #ifndef offset_of
 // g++ in strict mode complains loudly about the system offsetof() macro
@@ -80,7 +81,20 @@ struct shim_module_struct {
   const char* mname;
 };
 
+/* Sigh, NODE_MODULE_VERSION isn't in node_version */
+#if NODE_VERSION_AT_LEAST(0, 8, 0)
+#if NODE_VERSION_AT_LEAST(0, 10, 0)
+#if NODE_VERSION_AT_LEAST(0, 11, 5)
+#define SHIM_MODULE_VERSION NODE_MODULE_VERSION
+#else /* 0.11.5 */
+#define SHIM_MODULE_VERSION 0x000C
+#endif /* 0.11.5 */
+#else /* 0.10.0 */
 #define SHIM_MODULE_VERSION 0x000B
+#endif /* 0.10.0 */
+#else /* 0.8.0 */
+#error "The shim requires at least node v0.8.0"
+#endif /* 0.8.0 */
 
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
