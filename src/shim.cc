@@ -35,6 +35,8 @@
 #include "v8.h"
 #include "node.h"
 
+namespace shim {
+
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 using v8::FunctionCallbackInfo;
 #else
@@ -73,8 +75,6 @@ do {} while(0)
 #define SHIM_TO_VAL(obj) static_cast<Value*>((obj)->handle)
 
 #define VAL_DEFINE(var, obj) Local<Value> var(SHIM_TO_VAL(obj))
-
-namespace shim {
 
 Persistent<String> hidden_private;
 
