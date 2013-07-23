@@ -26,6 +26,10 @@
 
 #include "shim.h"
 
+#include <cstdarg>
+#include <cstdlib>
+#include <cstring>
+
 using v8::Arguments;
 using v8::Array;
 using v8::Exception;
