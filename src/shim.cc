@@ -97,6 +97,8 @@ shim_cleanup_context(shim_ctx_t* ctx)
     allocs->erase(it);
     free(o);
   }
+
+  delete allocs;
 }
 
 bool
