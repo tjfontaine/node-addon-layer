@@ -46,7 +46,6 @@ extern "C" {
 #endif
 
 typedef struct shim_val_s {
-  QUEUE member;
   void* handle;
 } shim_val_t;
 
@@ -59,7 +58,7 @@ typedef struct shim_ctx_s {
   void* scope;
   void* isolate;
   void* trycatch;
-  QUEUE allocs;
+  void* allocs;
 } shim_ctx_t;
 
 typedef struct shim_args_s {
@@ -110,13 +109,7 @@ struct shim_module_struct name ## _module = {                                 \
 
 #define SHIM_GET_SARGS(args) (args) - SHIM_ARG_PAD
 
-#define SHIM_SET_RVAL(ctx, args, val)                                         \
-do {                                                                          \
-  shim_val_t** sargs = SHIM_GET_SARGS(args);                                  \
-  sargs[SHIM_ARG_RVAL] = val;                                                 \
-  if(QUEUE_EMPTY(&(val)->member))                                             \
-    QUEUE_INSERT_TAIL(&(ctx)->allocs, &(val)->member);                        \
-} while(0)
+int SHIM_SET_RVAL(shim_ctx_t*, shim_val_t**, shim_val_t*);
 
 typedef int (* shim_func)(shim_ctx_t*, size_t, shim_val_t**);
 

@@ -35,6 +35,8 @@
 #include "v8.h"
 #include "node.h"
 
+#include <set>
+
 namespace shim {
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
@@ -65,7 +67,7 @@ using v8::Value;
   HandleScope scope;                                                          \
   shim_ctx_t ctx;                                                             \
   TryCatch trycatch;                                                          \
-  QUEUE_INIT(&ctx.allocs);                                                    \
+  ctx.allocs = new std::set<shim_val_t*>;                                     \
   ctx.isolate = static_cast<void*>(isolate);                                  \
   ctx.scope = static_cast<void*>(&scope);                                     \
   ctx.trycatch = static_cast<void*>(&trycatch);                               \
@@ -78,23 +80,44 @@ do {} while(0)
 
 Persistent<String> hidden_private;
 
-void
-shim_cleanup_context(shim_ctx_t *ctx)
+std::set<shim_val_t*>*
+allocs_from_ctx(shim_ctx_t* ctx)
 {
-  QUEUE* q = NULL;
-  QUEUE_FOREACH(q, &ctx->allocs) {
-    shim_val_t* o = container_of(q, shim_val_t, member);
+  return static_cast<std::set<shim_val_t*>*>(ctx->allocs);
+}
+
+void
+shim_cleanup_context(shim_ctx_t* ctx)
+{
+  std::set<shim_val_t*>* allocs = allocs_from_ctx(ctx);
+  std::set<shim_val_t*>::iterator it;
+
+  for (it = allocs->begin(); it != allocs->end(); it++) {
+    shim_val_t* o = *it;
+    allocs->erase(it);
     free(o);
   }
 }
 
+bool
+shim_has_allocd(shim_ctx_t* ctx, shim_val_t* val)
+{
+  std::set<shim_val_t*>* allocs = allocs_from_ctx(ctx);
+  return allocs->find(val) != allocs->end();
+}
+
+void
+shim_remove_alloc(shim_ctx_t* ctx, shim_val_t* val)
+{
+  allocs_from_ctx(ctx)->erase(val);
+}
+
 shim_val_t*
-shim_val_alloc(shim_ctx_t *ctx, Handle<Value> val)
+shim_val_alloc(shim_ctx_t* ctx, Handle<Value> val)
 {
   shim_val_t* obj = static_cast<shim_val_t*>(malloc(sizeof(shim_val_t)));
-  QUEUE_INIT(&obj->member);
   if (ctx != NULL)
-    QUEUE_INSERT_TAIL(&ctx->allocs, &obj->member);
+    allocs_from_ctx(ctx)->insert(obj);
   obj->handle = *val;
   return obj;
 }
@@ -148,7 +171,7 @@ Static(const Arguments& args)
   size_t argv_len = sizeof(shim_val_t*) * (argc + SHIM_ARG_PAD);
   shim_val_t** argv = static_cast<shim_val_t**>(malloc(argv_len));
 
-  argv[SHIM_ARG_THIS] = shim_val_alloc(&ctx, args.This());
+  argv[SHIM_ARG_THIS] = NULL; /*shim_val_alloc(&ctx, args.This());*/
   argv[SHIM_ARG_RVAL] = NULL;
 
   for (size_t i = 0; i < argc; i++) {
@@ -369,7 +392,6 @@ shim_CallFunctionName(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   Local<Value> prop = jsobj->Get(String::New(name));
 
   shim_val_t fval;
-  QUEUE_INIT(&fval.member);
   fval.handle = *prop;
 
   return shim::shim_CallFunctionValue(ctx, obj, fval, argc, argv, rval);
@@ -542,7 +564,7 @@ extern "C"
 shim_jstring_t*
 shim_NewStringCopyZ(shim_ctx_t* ctx, const char* src)
 {
-  Local<String> jstr = String::New(src);
+  Local<String> jstr = String::NewSymbol(src);
   return shim_val_alloc(ctx, jstr);
 }
 
@@ -550,7 +572,7 @@ extern "C"
 int
 shim_AddValueRoot(shim_ctx_t* ctx, shim_val_t* val)
 {
-  QUEUE_REMOVE(&val->member);
+  shim_remove_alloc(ctx, val);
   VAL_DEFINE(obj, val);
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   val->handle = *Persistent<Value>::New(static_cast<Isolate*>(ctx->isolate),
@@ -565,7 +587,7 @@ extern "C"
 int
 shim_RemoveValueRoot(shim_ctx_t* ctx, shim_val_t* val)
 {
-  QUEUE_INSERT_TAIL(&ctx->allocs, &val->member);
+  allocs_from_ctx(ctx)->insert(val);
   Persistent<Value> v = SHIM_TO_VAL(val);
   Local<Value> tmp = Local<Value>::New(v);
   v.Dispose();
@@ -646,7 +668,7 @@ void
 shim_ValueMakeWeak(shim_ctx_t* ctx, shim_val_t* val, void* data,
   shim_weak_cb weak_cb)
 {
-  if(!QUEUE_EMPTY(&val->member))
+  if(shim_has_allocd(ctx, val))
     shim::shim_AddValueRoot(ctx, val);
 
   Persistent<Value> tmp(SHIM_TO_VAL(val));
@@ -757,6 +779,17 @@ void
 shim_ThrowRangeError(shim_ctx_t* ctx, const char* msg)
 {
   ThrowException(Exception::TypeError(String::New(msg)));
+}
+
+extern "C"
+int
+SHIM_SET_RVAL(shim_ctx_t* ctx, shim_val_t** argv, shim_val_t* val)
+{
+  shim_val_t** sargs = SHIM_GET_SARGS(argv);
+  sargs[SHIM_ARG_RVAL] = val;
+  if (!shim_has_allocd(ctx, val))
+    allocs_from_ctx(ctx)->insert(val);
+  return TRUE;
 }
 
 }
