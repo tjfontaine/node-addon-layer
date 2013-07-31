@@ -155,12 +155,14 @@ Static(const Arguments& args)
 
   if(sargs.ret != NULL) {
     ret = static_cast<Value*>(sargs.ret->handle);
-    free(sargs.ret);
+    shim_value_release(sargs.ret);
   }
 
   for (i = 0; i < sargs.argc; i++) {
-    free(sargs.argv[i]);
+    shim_value_release(sargs.argv[i]);
   }
+
+  shim_value_release(sargs.self);
 
   shim_context_cleanup(&ctx);
 
