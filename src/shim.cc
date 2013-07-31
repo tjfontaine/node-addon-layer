@@ -922,28 +922,29 @@ shim_bool_t
 shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
   void* rval)
 {
+  Local<Value> val(SHIM_TO_VAL(arg));
+  shim_val_t* vrval = *(shim_val_t**)rval;
   switch(type) {
     case SHIM_TYPE_BOOL:
-      *(shim_bool_t*)rval = SHIM_TO_VAL(arg)->BooleanValue();
+      *(shim_bool_t*)rval = val->BooleanValue();
       break;
     case SHIM_TYPE_INTEGER:
-      *(int64_t*)rval = SHIM_TO_VAL(arg)->IntegerValue();
+      *(int64_t*)rval = val->IntegerValue();
       break;
     case SHIM_TYPE_UINT32:
-      *(uint32_t*)rval = SHIM_TO_VAL(arg)->Uint32Value();
+      *(uint32_t*)rval = val->Uint32Value();
       break;
     case SHIM_TYPE_INT32:
-      *(int32_t*)rval = SHIM_TO_VAL(arg)->Int32Value();
+      *(int32_t*)rval = val->Int32Value();
       break;
     case SHIM_TYPE_NUMBER:
-      *(double*)rval = SHIM_TO_VAL(arg)->NumberValue();
+      *(double*)rval = val->NumberValue();
       break;
     case SHIM_TYPE_EXTERNAL:
       *(void**)rval = shim::shim_external_value(ctx, arg);
       break;
     case SHIM_TYPE_STRING:
-      if(!shim::shim_value_to(ctx, arg, SHIM_TYPE_STRING, *(shim_val_t**)rval))
-        return FALSE;
+      vrval->handle = *OBJ_TO_STRING(val);
       break;
     case SHIM_TYPE_UNDEFINED:
     case SHIM_TYPE_NULL:
