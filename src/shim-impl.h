@@ -34,22 +34,21 @@ struct shim_val_s {
   enum shim_type type;
 };
 
-typedef struct shim_ctx_s {
+struct shim_ctx_s {
   void* scope;
   void* isolate;
   void* trycatch;
   void* allocs;
-} shim_ctx_t;
+};
 
-typedef struct shim_args_s {
+struct shim_args_s {
   size_t argc;
   shim_val_t *self;
   shim_val_t **argv;
   shim_val_t *ret;
-} shim_args_t;
+};
 
 struct shim_work_s {
-  uv_work_t req;
   shim_work_cb work_cb;
   shim_after_work after_cb;
   void* hint;

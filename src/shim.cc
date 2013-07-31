@@ -1028,7 +1028,7 @@ shim_args_get_data(shim_ctx_t* ctx, shim_args_t* args)
 void
 before_work(uv_work_t* req)
 {
-  shim_work_t* work = container_of(req, shim_work_t, req);
+  shim_work_t* work = static_cast<shim_work_t*>(req->data);
   work->work_cb(work, work->hint);
 }
 
@@ -1043,22 +1043,24 @@ before_after(uv_work_t* req)
   int status = 0;
 #endif
   SHIM_PROLOGUE(ctx);
-  shim_work_t* work = container_of(req, shim_work_t, req);
+  shim_work_t* work = static_cast<shim_work_t*>(req->data);
   work->after_cb(&ctx, work, status, work->hint);
   shim_context_cleanup(&ctx);
   delete work;
+  delete req;
 }
 
 void
 shim_queue_work(shim_work_cb work_cb,
   shim_after_work after_cb, void* hint)
 {
+  uv_work_t* req = new uv_work_t;
   shim_work_t* work = new shim_work_t;
   work->work_cb = work_cb;
   work->after_cb = after_cb;
   work->hint = hint;
-  work->req.data = work;
-  uv_queue_work(uv_default_loop(), &work->req, before_work, before_after);
+  req->data = work;
+  uv_queue_work(uv_default_loop(), req, before_work, before_after);
 }
 
 }
