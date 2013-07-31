@@ -128,6 +128,10 @@ shim_bool_t shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
 void shim_value_release(shim_val_t* val);
 
 
+shim_val_t* shim_undefined();
+shim_val_t* shim_null();
+
+
 shim_val_t* shim_obj_new(shim_ctx_t* context, shim_val_t* klass,
   shim_val_t* proto);
 shim_val_t* shim_obj_new_instance(shim_ctx_t* context, shim_val_t* klass,

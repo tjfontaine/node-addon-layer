@@ -85,6 +85,16 @@ do {} while(0)
 
 Persistent<String> hidden_private;
 
+shim_val_t shim__undefined = {
+  NULL,
+  SHIM_TYPE_UNDEFINED,
+};
+
+shim_val_t shim__null = {
+  NULL,
+  SHIM_TYPE_NULL,
+};
+
 void
 shim_context_cleanup(shim_ctx_t* ctx)
 {
@@ -105,10 +115,30 @@ Local<Value>*
 shim_vals_to_handles(size_t argc, shim_val_t** argv)
 {
   Local<Value>* jsargs = new Local<Value>[argc];
+
   for (size_t i = 0; i < argc; i++) {
-    Local<Value> tmp = SHIM_TO_VAL(argv[i]);
+    if (argv[i] == NULL) {
+      jsargs[i] = Null()->ToObject();
+      continue;
+    }
+
+    Local<Value> tmp;
+
+    switch(argv[i]->type) {
+      case SHIM_TYPE_UNDEFINED:
+        tmp = Undefined()->ToObject();
+        break;
+      case SHIM_TYPE_NULL:
+        tmp = Null()->ToObject();
+        break;
+      default:
+        tmp = SHIM_TO_VAL(argv[i]);
+        break;
+    }
+
     jsargs[i] = tmp;
   }
+
   return jsargs;
 }
 
@@ -133,7 +163,7 @@ Static(const Arguments& args)
   shim_args_t sargs;
   sargs.argc = args.Length();
   sargs.argv = NULL;
-  sargs.ret = NULL;
+  sargs.ret = shim_undefined();
   sargs.self = shim_val_alloc(&ctx, args.This());
 
   size_t argv_len = sizeof(shim_val_t*) * sargs.argc;
@@ -152,8 +182,10 @@ Static(const Arguments& args)
   }
 
   Value* ret = NULL;
+  shim_type_t rtype = SHIM_TYPE_NULL;
 
   if(sargs.ret != NULL) {
+    rtype = sargs.ret->type;
     ret = static_cast<Value*>(sargs.ret->handle);
     shim_value_release(sargs.ret);
   }
@@ -176,10 +208,17 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
   } else {
-    if (ret != NULL)
-      return ctx_scope.Close(Handle<Value>(ret));
-    else
-      return ctx_scope.Close(Undefined());
+    switch(rtype) {
+      case SHIM_TYPE_UNDEFINED:
+        return ctx_scope.Close(Undefined());
+        break;
+      case SHIM_TYPE_NULL:
+        return ctx_scope.Close(Null());
+        break;
+      default:
+        return ctx_scope.Close(Handle<Value>(ret));
+        break;
+    }
   }
 #endif
 }
@@ -363,10 +402,26 @@ shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
 }
 
 
+shim_val_t*
+shim_undefined()
+{
+  return &shim__undefined;
+}
+
+
+shim_val_t*
+shim_null()
+{
+  return &shim__null;
+}
+
+
 void
 shim_value_release(shim_val_t* val)
 {
-  free(val);
+  if (val != NULL && val->type != SHIM_TYPE_NULL
+      && val->type != SHIM_TYPE_UNDEFINED)
+    free(val);
 }
 
 

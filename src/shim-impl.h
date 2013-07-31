@@ -54,6 +54,9 @@ struct shim_work_s {
   void* hint;
 };
 
+extern shim_val_t* shim__undefined;
+extern shim_val_t* shim__null;
+
 #ifdef __cplusplus
 }
 #endif
