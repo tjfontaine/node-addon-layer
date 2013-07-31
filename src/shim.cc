@@ -164,6 +164,9 @@ Static(const Arguments& args)
 
   shim_value_release(sargs.self);
 
+  if (argv_len > 0)
+    free(sargs.argv);
+
   shim_context_cleanup(&ctx);
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
