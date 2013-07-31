@@ -151,7 +151,7 @@ Static(const Arguments& args)
     /* the function failed do we need to do any more checking of exceptions? */
   }
 
-  Value* ret;
+  Value* ret = NULL;
 
   if(sargs.ret != NULL) {
     ret = static_cast<Value*>(sargs.ret->handle);
@@ -176,7 +176,10 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
   } else {
-    return ctx_scope.Close(Handle<Value>(ret));
+    if (ret != NULL)
+      return ctx_scope.Close(Handle<Value>(ret));
+    else
+      return ctx_scope.Close(Undefined());
   }
 #endif
 }
