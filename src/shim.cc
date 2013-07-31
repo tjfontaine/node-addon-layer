@@ -733,7 +733,8 @@ shim_string_length_utf8(shim_val_t* val)
 const char*
 shim_string_value(shim_val_t* val)
 {
-  return *String::Utf8Value(OBJ_TO_STRING(SHIM_TO_VAL(val)));
+  String::Utf8Value str(OBJ_TO_STRING(SHIM_TO_VAL(val)));
+  return strdup(*str);
 }
 
 
