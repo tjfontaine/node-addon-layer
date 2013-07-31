@@ -565,6 +565,7 @@ common_weak_cb(Persistent<Value> obj, void* data)
   SHIM_PROLOGUE(ctx);
   shim_val_t* tmp = shim_val_alloc(NULL, obj);
   baton->weak_cb(tmp, baton->data);
+  delete baton;
 }
 
 
@@ -620,6 +621,8 @@ shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   } else {
     ret = fn->Call(Object::New(), argc, jsargs);
   }
+
+  delete jsargs;
 
   rval->handle = *ret;
   return TRUE;
