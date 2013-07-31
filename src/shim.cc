@@ -371,7 +371,7 @@ shim_value_release(shim_val_t* val)
 
 
 shim_val_t*
-shim_new_object(shim_ctx_t* ctx, shim_val_t* klass, shim_val_t* proto)
+shim_obj_new(shim_ctx_t* ctx, shim_val_t* klass, shim_val_t* proto)
 {
   /* TODO if klass != NULL we should FunctionTemplate::New() */
   Local<Object> obj = Object::New();
