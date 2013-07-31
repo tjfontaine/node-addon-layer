@@ -465,6 +465,7 @@ shim_obj_set_funcs(shim_ctx_t* ctx, shim_val_t* recv,
     if (!shim::shim_obj_set_prop_name(ctx, recv, cur.name, func))
       return FALSE;
 
+    shim::shim_value_release(func);
     cur = funcs[++i];
   }
 
