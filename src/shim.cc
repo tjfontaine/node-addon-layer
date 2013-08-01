@@ -683,7 +683,15 @@ shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
 
   delete jsargs;
 
-  rval->handle = *ret;
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+
+  if (!tr->HasCaught())
+    rval->handle = *ret;
+  else {
+    rval->handle = *Undefined();
+    tr->ReThrow(); /* TODO why is this necessary? */
+  }
+
   return TRUE;
 }
 
