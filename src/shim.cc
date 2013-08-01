@@ -182,13 +182,24 @@ Static(const Arguments& args)
   }
 
   Value* ret = NULL;
-  shim_type_t rtype = SHIM_TYPE_NULL;
 
   if(sargs.ret != NULL) {
-    rtype = sargs.ret->type;
-    ret = static_cast<Value*>(sargs.ret->handle);
-    shim_value_release(sargs.ret);
+    switch(sargs.ret->type) {
+      case SHIM_TYPE_UNDEFINED:
+        ret = *Undefined();
+        break;
+      case SHIM_TYPE_NULL:
+        ret = *Null();
+        break;
+      default:
+        ret = static_cast<Value*>(sargs.ret->handle);
+        break;
+    }
+  } else {
+    ret = *Null();
   }
+
+  assert(ret != NULL);
 
   for (i = 0; i < sargs.argc; i++) {
     shim_value_release(sargs.argv[i]);
@@ -208,17 +219,7 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
   } else {
-    switch(rtype) {
-      case SHIM_TYPE_UNDEFINED:
-        return ctx_scope.Close(Undefined());
-        break;
-      case SHIM_TYPE_NULL:
-        return ctx_scope.Close(Null());
-        break;
-      default:
-        return ctx_scope.Close(Handle<Value>(ret));
-        break;
-    }
+    return ctx_scope.Close(Local<Value>(ret));
   }
 #endif
 }
