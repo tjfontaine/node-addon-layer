@@ -118,7 +118,7 @@ shim_vals_to_handles(size_t argc, shim_val_t** argv)
 
   for (size_t i = 0; i < argc; i++) {
     if (argv[i] == NULL) {
-      jsargs[i] = Null()->ToObject();
+      jsargs[i] = *Null();
       continue;
     }
 
@@ -126,10 +126,10 @@ shim_vals_to_handles(size_t argc, shim_val_t** argv)
 
     switch(argv[i]->type) {
       case SHIM_TYPE_UNDEFINED:
-        tmp = Undefined()->ToObject();
+        tmp = *Undefined();
         break;
       case SHIM_TYPE_NULL:
-        tmp = Null()->ToObject();
+        tmp = *Null();
         break;
       default:
         tmp = SHIM_TO_VAL(argv[i]);
