@@ -214,7 +214,7 @@ Static(const Arguments& args)
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   if (!ctx_trycatch.HasCaught())
-    args.GetReturnValue().Set(ret);
+    args.GetReturnValue().Set(Local<Value>(ret));
 #else
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
@@ -879,12 +879,14 @@ char*
 shim_buffer_value(shim_val_t* val)
 {
   Local<Value>v(SHIM_TO_VAL(val));
-  assert(Buffer::HasInstance(v));
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
+  assert(node::Buffer::HasInstance(v));
   return node::Buffer::Data(v);
 #elif NODE_VERSION_AT_LEAST(0, 10, 0)
+  assert(Buffer::HasInstance(v));
   return Buffer::Data(v);
 #else
+  assert(Buffer::HasInstance(v));
   return Buffer::Data(v.As<Object>());
 #endif
 }
@@ -894,12 +896,14 @@ size_t
 shim_buffer_length(shim_val_t* val)
 {
   Local<Value>v(SHIM_TO_VAL(val));
-  assert(Buffer::HasInstance(v));
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
+  assert(node::Buffer::HasInstance(v));
   return node::Buffer::Length(v);
 #elif NODE_VERSION_AT_LEAST(0, 10, 0)
+  assert(Buffer::HasInstance(v));
   return Buffer::Length(v);
 #else
+  assert(Buffer::HasInstance(v));
   return Buffer::Length(v.As<Object>());
 #endif
 }
