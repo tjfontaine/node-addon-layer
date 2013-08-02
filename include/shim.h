@@ -181,10 +181,20 @@ shim_val_t* shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc,
   int32_t flags, const char* name, void* data);
 
 
+shim_bool_t shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self,
+  shim_val_t* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
 shim_bool_t shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self,
   const char* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
 shim_bool_t shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self,
   shim_val_t* func, size_t argc, shim_val_t** argv, shim_val_t* rval);
+
+
+shim_bool_t shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self,
+  shim_val_t* sym, size_t argc, shim_val_t** argv, shim_val_t* rval);
+shim_bool_t shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self,
+  shim_val_t* fval, size_t argc, shim_val_t** argv, shim_val_t* rval);
+shim_bool_t shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj,
+  const char* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
 
 
 shim_val_t* shim_number_new(shim_ctx_t* ctx, double d);

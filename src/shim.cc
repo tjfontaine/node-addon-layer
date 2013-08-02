@@ -172,6 +172,28 @@ shim_throw_verror(shim_ctx_t* ctx, enum shim_err_type type, const char* msg,
 }
 
 
+Local<Value>
+shim_call_func(Local<Object> recv, Local<Function> fn, size_t argc,
+  shim_val_t** argv)
+{
+  Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
+  Local<Value> ret = fn->Call(recv, argc, jsargs);
+  delete jsargs;
+  return ret;
+}
+
+
+Local<Value>
+shim_call_func(Local<Object> recv, Local<String> str, size_t argc,
+  shim_val_t** argv)
+{
+  Local<Value> fh = recv->Get(str);
+  assert(fh->IsFunction());
+  Local<Function> fn = fh.As<Function>();
+  return shim_call_func(recv, fn, argc, argv);
+}
+
+
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 void
 Static(const FunctionCallbackInfo<Value>& args)
@@ -240,6 +262,10 @@ Static(const Arguments& args)
     free(sargs.argv);
 
   shim_context_cleanup(&ctx);
+
+  /* TODO sometimes things don't always propogate? */
+  if (ctx_trycatch.HasCaught())
+    ctx_trycatch.ReThrow();
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   if (!ctx_trycatch.HasCaught())
@@ -694,7 +720,79 @@ shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc, int32_t flags,
 
 
 shim_bool_t
-shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
+shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* name,
+  size_t argc, shim_val_t** argv, shim_val_t* rval)
+{
+  assert(self != NULL);
+  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+
+  Local<String> str = OBJ_TO_STRING(SHIM_TO_VAL(name));
+
+  rval->handle = *shim_call_func(recv, str, argc, argv);
+
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+  return !tr->HasCaught();
+}
+
+
+shim_bool_t
+shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self, const char* name,
+  size_t argc, shim_val_t** argv, shim_val_t* rval)
+{
+  assert(self != NULL);
+  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+
+  rval->handle = *shim_call_func(recv, String::NewSymbol(name), argc, argv);
+  
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+  return !tr->HasCaught();
+}
+
+
+shim_bool_t
+shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* func,
+  size_t argc, shim_val_t** argv, shim_val_t* rval)
+{
+  Local<Value> fh = SHIM_TO_VAL(func);
+  assert(fh->IsFunction());
+  Local<Function> fn = fh.As<Function>();
+
+  Local<Object> recv;
+
+  if (self != NULL)
+    recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+  else
+    recv = Object::New();
+
+  rval->handle = *shim_call_func(recv, fn, argc, argv);
+
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+  return !tr->HasCaught();
+}
+
+
+shim_bool_t
+shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
+  size_t argc, shim_val_t** argv, shim_val_t* rval)
+{
+  assert(self != NULL);
+
+  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+  Local<String> jsym = OBJ_TO_STRING(SHIM_TO_VAL(sym));
+
+  Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
+
+  rval->handle = *node::MakeCallback(recv, jsym, argc, jsargs);
+
+  delete jsargs;
+
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+  return !tr->HasCaught();
+}
+
+
+shim_bool_t
+shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
 {
   /* TODO check is valid */
@@ -702,41 +800,42 @@ shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   Local<Function> fn = Local<Function>::Cast(prop);
   Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
 
-  Local<Value> ret;
+  Local<Object> recv;
 
   if (self != NULL) {
-    Local<Object> obj = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
-    ret = fn->Call(obj, argc, jsargs);
+    recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
   } else {
-    ret = fn->Call(Object::New(), argc, jsargs);
+    recv = Object::New();
   }
+
+  Handle<Value> ret = node::MakeCallback(recv, fn, argc, jsargs);
+
+  rval->handle = *ret;
 
   delete jsargs;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-
-  if (!tr->HasCaught())
-    rval->handle = *ret;
-  else {
-    rval->handle = *Undefined();
-    tr->ReThrow(); /* TODO why is this necessary? */
-  }
-
-  return TRUE;
+  return !tr->HasCaught();
 }
 
 
-int
-shim_func_call_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
+shim_bool_t
+shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  Local<Value> prop = jsobj->Get(String::NewSymbol(name));
+  assert(obj != NULL);
 
-  shim_val_t fval;
-  fval.handle = *prop;
+  Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
+  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
 
-  return shim::shim_func_call_val(ctx, obj, &fval, argc, argv, rval);
+  Handle<Value> ret = node::MakeCallback(recv, name, argc, jsargs);
+
+  rval->handle = *ret;
+
+  delete jsargs;
+
+  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
+  return !tr->HasCaught();
 }
 
 
@@ -1107,7 +1206,7 @@ shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
     if(!shim_unpack_one(ctx, args, cur, ctype, rval)) {
       /* TODO this should use a type string */
       shim::shim_throw_type_error(ctx, "Argument %d not of type %s", cur,
-        shim::shim_type_str(ctype));
+        shim_type_str(ctype));
       return FALSE;
     }
 
