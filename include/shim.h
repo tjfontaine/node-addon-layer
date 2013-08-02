@@ -248,9 +248,9 @@ void shim_exception_set(shim_ctx_t* ctx, shim_val_t* val);
 shim_bool_t shim_exception_get(shim_ctx_t* ctx, shim_val_t* rval);
 
 
-void shim_throw_error(shim_ctx_t* ctx, const char* msg);
-void shim_throw_type_error(shim_ctx_t* ctx, const char* msg);
-void shim_throw_range_error(shim_ctx_t* ctx, const char* msg);
+void shim_throw_error(shim_ctx_t* ctx, const char* msg, ...);
+void shim_throw_type_error(shim_ctx_t* ctx, const char* msg, ...);
+void shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...);
 
 
 shim_bool_t shim_unpack_one(shim_ctx_t* ctx, shim_args_t* args, uint32_t idx,

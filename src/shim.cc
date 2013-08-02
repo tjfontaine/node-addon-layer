@@ -143,6 +143,35 @@ shim_vals_to_handles(size_t argc, shim_val_t** argv)
 }
 
 
+enum shim_err_type {
+  SHIM_ERR_ERROR,
+  SHIM_ERR_TYPE,
+  SHIM_ERR_RANGE,
+};
+
+#define SHIM_ERROR_LENGTH 512
+
+void
+shim_throw_verror(shim_ctx_t* ctx, enum shim_err_type type, const char* msg,
+  va_list ap)
+{
+  char buf[SHIM_ERROR_LENGTH];
+  vsnprintf(buf, SHIM_ERROR_LENGTH, msg, ap);
+  Local<String> str = String::New(buf);
+  switch(type) {
+    case SHIM_ERR_ERROR:
+      ThrowException(Exception::Error(str));
+      break;
+    case SHIM_ERR_TYPE:
+      ThrowException(Exception::TypeError(str));
+      break;
+    case SHIM_ERR_RANGE:
+      ThrowException(Exception::RangeError(str));
+      break;
+  } 
+}
+
+
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 void
 Static(const FunctionCallbackInfo<Value>& args)
@@ -255,6 +284,7 @@ void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 }
 
 
+/* TODO abstract out so we don't need multiple temporaries */
 shim_bool_t
 shim_value_is(shim_val_t* val, shim_type_t type)
 {
@@ -977,23 +1007,32 @@ shim_exception_clear(shim_ctx_t* ctx)
 
 
 void
-shim_throw_error(shim_ctx_t* ctx, const char* msg)
+shim_throw_error(shim_ctx_t* ctx, const char* msg, ...)
 {
-  ThrowException(Exception::Error(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  shim::shim_throw_verror(ctx, SHIM_ERR_ERROR, msg, ap);
+  va_end(ap);
 }
 
 
 void
-shim_throw_type_error(shim_ctx_t* ctx, const char* msg)
+shim_throw_type_error(shim_ctx_t* ctx, const char* msg, ...)
 {
-  ThrowException(Exception::TypeError(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  shim::shim_throw_verror(ctx, SHIM_ERR_TYPE, msg, ap);
+  va_end(ap);
 }
 
 
 void
-shim_throw_range_error(shim_ctx_t* ctx, const char* msg)
+shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...)
 {
-  ThrowException(Exception::TypeError(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  shim::shim_throw_verror(ctx, SHIM_ERR_RANGE, msg, ap);
+  va_end(ap);
 }
 
 
@@ -1001,6 +1040,9 @@ shim_bool_t
 shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
   void* rval)
 {
+  if (!shim::shim_value_is(arg, type))
+    return FALSE;
+
   Local<Value> val(SHIM_TO_VAL(arg));
   shim_val_t* vrval = *(shim_val_t**)rval;
   switch(type) {
@@ -1062,8 +1104,11 @@ shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
   {
     void* rval = va_arg(ap, void*);
 
-    if(!shim_unpack_one(ctx, args, cur, ctype, rval))
+    if(!shim_unpack_one(ctx, args, cur, ctype, rval)) {
+      /* TODO this should use a type string */
+      shim::shim_throw_type_error(ctx, "Argument %d not of type %d", cur, ctype);
       return FALSE;
+    }
 
     ctype = static_cast<shim_type_t>(va_arg(ap, int));
   }
