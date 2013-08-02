@@ -1,9 +1,9 @@
 # addon layer
 
-This is a thin shim layer for node that provides a C API similar to
+This is a thin shim layer for node that provides a C API somewhat inspired by
 [JSAPI](https://developer.mozilla.org/en-US/docs/SpiderMonkey/JSAPI_Reference).
 
-**This is still just proof of concept**
+**This is still very alpha**
 
 ## implementation
 
@@ -19,8 +19,8 @@ To quote:
  > their handles.
 
 This isn't as scary as it sounds, since the object is generally rooted in a
-HandleScope from the entry point. But it also means that to compile in V8 3.20+
-you must define
+HandleScope from the boundary cross from JS to C. But it also means that to
+compile in V8 3.20+ you must define:
 
  * V8_USE_UNSAFE_HANDLES
  * V8_ALLOW_ACCESS_TO_RAW_HANDLE_CONSTRUCTOR
@@ -37,25 +37,19 @@ can then `Unwrap` marshal arguments and invoke your function pointer.
 ### allocation
 
 Most `shim_val_t`s are allocated on the heap--though internally the arguments
-could later be `alloca`d. When the shim allocates a `shim_val_t` and it has a
-`shim_ctx_t` the allocated `shim_val_t` will be added to a list in the
-`shim_ctx_t` as an active allocation.
+could later be `alloca`d. You are not responsible for releasing the arguments
+passed to your function, nor are you responsible for releasing any value you
+return.
 
-This allows the shim to cleanup any allocated `shim_val_t`s when it is cleaning
-up the context, such that the module author doesn't have to explicitly manage
-as much memory.
-
-However you can use `shim_AddValueRoot` to promote to a `v8::Persistent`, part
-of the promotion removes the `shim_val_t` from the list of to be `free`d values
-and is safe for the module author to keep.
+You *are* responsible to `shim_value_release` any value you create, or is
+returned to you that isn't `shim_args_get`. With the exception of
+`shim_persistent_new` which should be `shim_persistent_dispose`d.
 
 ## TODO
 
  * Actually use the isolate
- * finish multiple V8 version support
  * Object creation for specific class
  * Date
- * Buffer
 
 The shim does some gratuitous boxing and `ToObject()`s, instead when we have
 previously coerced a type we should store that information on the `shim_val_t`
