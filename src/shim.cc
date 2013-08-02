@@ -855,8 +855,10 @@ shim_buffer_new_copy(shim_ctx_t* ctx, const char* data, size_t len)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(data, len));
-#else
+#elif NODE_VERSION_AT_LEAST(0, 10, 0)
   return shim_val_alloc(ctx, Buffer::New(data, len)->handle_);
+#else
+  return shim_val_alloc(ctx, Buffer::New((char*)data, len)->handle_);
 #endif
 }
 
@@ -876,10 +878,14 @@ shim_buffer_new_external(shim_ctx_t* ctx, char* data, size_t len,
 char*
 shim_buffer_value(shim_val_t* val)
 {
+  Local<Value>v(SHIM_TO_VAL(val));
+  assert(Buffer::HasInstance(v));
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  return node::Buffer::Data(SHIM_TO_VAL(val));
+  return node::Buffer::Data(v);
+#elif NODE_VERSION_AT_LEAST(0, 10, 0)
+  return Buffer::Data(v);
 #else
-  return Buffer::Data(SHIM_TO_VAL(val));
+  return Buffer::Data(v.As<Object>());
 #endif
 }
 
@@ -887,10 +893,14 @@ shim_buffer_value(shim_val_t* val)
 size_t
 shim_buffer_length(shim_val_t* val)
 {
+  Local<Value>v(SHIM_TO_VAL(val));
+  assert(Buffer::HasInstance(v));
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  return node::Buffer::Length(SHIM_TO_VAL(val));
+  return node::Buffer::Length(v);
+#elif NODE_VERSION_AT_LEAST(0, 10, 0)
+  return Buffer::Length(v);
 #else
-  return Buffer::Length(SHIM_TO_VAL(val));
+  return Buffer::Length(v.As<Object>());
 #endif
 }
 
