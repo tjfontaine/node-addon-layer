@@ -1106,7 +1106,8 @@ shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
 
     if(!shim_unpack_one(ctx, args, cur, ctype, rval)) {
       /* TODO this should use a type string */
-      shim::shim_throw_type_error(ctx, "Argument %d not of type %d", cur, ctype);
+      shim::shim_throw_type_error(ctx, "Argument %d not of type %s", cur,
+        shim::shim_type_str(ctype));
       return FALSE;
     }
 
@@ -1187,6 +1188,7 @@ before_after(uv_work_t* req)
   delete req;
 }
 
+
 void
 shim_queue_work(shim_work_cb work_cb,
   shim_after_work after_cb, void* hint)
@@ -1199,6 +1201,35 @@ shim_queue_work(shim_work_cb work_cb,
   req->data = work;
   uv_queue_work(uv_default_loop(), req, before_work, before_after);
 }
+
+
+const char*
+shim_type_str(shim_type_t type)
+{
+  switch(type) {
+#define SHIM_ITEM(type) \
+    case type: \
+      return #type;
+      break;
+
+    SHIM_ITEM(SHIM_TYPE_UNKNOWN)
+    SHIM_ITEM(SHIM_TYPE_UNDEFINED)
+    SHIM_ITEM(SHIM_TYPE_NULL)
+    SHIM_ITEM(SHIM_TYPE_BOOL)
+    SHIM_ITEM(SHIM_TYPE_DATE)
+    SHIM_ITEM(SHIM_TYPE_ARRAY)
+    SHIM_ITEM(SHIM_TYPE_OBJECT)
+    SHIM_ITEM(SHIM_TYPE_INTEGER)
+    SHIM_ITEM(SHIM_TYPE_INT32)
+    SHIM_ITEM(SHIM_TYPE_UINT32)
+    SHIM_ITEM(SHIM_TYPE_NUMBER)
+    SHIM_ITEM(SHIM_TYPE_EXTERNAL)
+    SHIM_ITEM(SHIM_TYPE_FUNCTION)
+    SHIM_ITEM(SHIM_TYPE_STRING)
+#undef SHIM_ITEM
+  }
+}
+
 
 }
 

@@ -277,6 +277,8 @@ typedef void (* shim_after_work)(shim_ctx_t*, shim_work_t*, int, void*);
 void shim_queue_work(shim_work_cb, shim_after_work, void* hint);
 
 
+const char* shim_type_str(shim_type_t type);
+
 #ifndef TRUE
 #define TRUE 1
 #endif
