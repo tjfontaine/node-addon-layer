@@ -311,6 +311,15 @@ void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 
 
 /* TODO abstract out so we don't need multiple temporaries */
+
+/**
+ * \param val The value to check
+ * \param type The expected type
+ * \return TRUE or FALSE
+ *
+ * This doesn't coerce types, merely checks that the value is or isn't of the
+ * desired type
+ */
 shim_bool_t
 shim_value_is(shim_val_t* val, shim_type_t type)
 {
@@ -399,7 +408,16 @@ shim_value_is(shim_val_t* val, shim_type_t type)
 #define OBJ_TO_FUNCTION(obj) \
   ((obj)->IsFunction() ? (obj).As<Function>() : Local<Function>::Cast(obj))
 
-
+/**
+ * \param ctx The currently executed context
+ * \param val The given value
+ * \param type The desired type
+ * \param rval The destination value
+ * \return TRUE or FALSE
+ *
+ * Attempts to coerce the given value into another type, if it fails to do so
+ * returns FALSE.
+ */
 shim_bool_t
 shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
   shim_val_t* rval)
@@ -472,7 +490,13 @@ shim_null()
   return &shim__null;
 }
 
-
+/**
+ * \param val The given value
+ * \sa [memory](md_docs_memory.html)
+ *
+ * Presuming the value was not allocated for ::shim_args_s or being used for
+ * shim_args_set_rval() use this method to free the allocated memory
+ */
 void
 shim_value_release(shim_val_t* val)
 {
@@ -482,6 +506,13 @@ shim_value_release(shim_val_t* val)
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param klass The constructor to be used (may be NULL)
+ * \param proto The prototype that should be used (may be NULL)
+ * \return A pointer to the created object
+ * \sa shim_value_release()
+ */
 shim_val_t*
 shim_obj_new(shim_ctx_t* ctx, shim_val_t* klass, shim_val_t* proto)
 {
@@ -497,6 +528,15 @@ shim_obj_new(shim_ctx_t* ctx, shim_val_t* klass, shim_val_t* proto)
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param klass The given constructor
+ * \param argc The amount of arguments being passed
+ * \param argv The array of arguments to be passed
+ * \return The returned object
+ *
+ * Use this to instantiate an object with the given arguments
+ */
 shim_val_t*
 shim_obj_new_instance(shim_ctx_t* ctx, shim_val_t* klass, size_t argc,
   shim_val_t** argv)
@@ -504,7 +544,14 @@ shim_obj_new_instance(shim_ctx_t* ctx, shim_val_t* klass, size_t argc,
   return NULL;
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param src The given value
+ * \return The new Local value representing the previous value
+ *
+ * Use this when you might want to create a Local of a persistent
+ * \sa persistents
+ */
 shim_val_t*
 shim_obj_clone(shim_ctx_t* ctx, shim_val_t* src)
 {
@@ -512,7 +559,14 @@ shim_obj_clone(shim_ctx_t* ctx, shim_val_t* src)
   return shim_val_alloc(ctx, dst);
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param val The given object
+ * \param name The name of the property
+ * \return TRUE if the object has the named property, otherwise FALSE
+ *
+ * Has the name
+ */
 shim_bool_t
 shim_obj_has_name(shim_ctx_t* ctx, shim_val_t* val, const char* name)
 {
@@ -520,7 +574,15 @@ shim_obj_has_name(shim_ctx_t* ctx, shim_val_t* val, const char* name)
   return obj->Has(String::NewSymbol(name)) ? TRUE : FALSE;
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param val The given object
+ * \param id The id of the property
+ * \return TRUE if the object has the indexed property, otherwise FALSE
+ *
+ * Object can have ordered properties, or may be an array, use this to check
+ * if either exist.
+ */
 shim_bool_t
 shim_obj_has_id(shim_ctx_t* ctx, shim_val_t* val, uint32_t id)
 {
@@ -528,7 +590,15 @@ shim_obj_has_id(shim_ctx_t* ctx, shim_val_t* val, uint32_t id)
   return obj->Has(id) ? TRUE : FALSE;
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param val The given object
+ * \param sym The symbol of the property
+ * \return TRUE if the object has the property, otherwise FALSE
+ *
+ * Use this if you are keeping a reference to a commonly used symbol name
+ * or are passed a value to lookup
+ */
 shim_bool_t
 shim_obj_has_sym(shim_ctx_t* ctx, shim_val_t* val, shim_val_t* sym)
 {
@@ -536,7 +606,13 @@ shim_obj_has_sym(shim_ctx_t* ctx, shim_val_t* val, shim_val_t* sym)
   return obj->Has(OBJ_TO_STRING(SHIM_TO_VAL(sym)));
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param obj The given object
+ * \param name The name of the property
+ * \param val The value to be stored
+ * \return TRUE if the property was set, otherwise FALSE
+ */
 shim_bool_t
 shim_obj_set_prop_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   shim_val_t* val)
@@ -546,6 +622,13 @@ shim_obj_set_prop_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param obj The given object
+ * \param id The id of the property
+ * \param val The value to be stored
+ * \return TRUE if the property was set, otherwise FALSE
+ */
 shim_bool_t
 shim_obj_set_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t id,
   shim_val_t* val)
@@ -555,6 +638,13 @@ shim_obj_set_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t id,
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param obj The given object
+ * \param sym The symbol of the property
+ * \param val The value to be stored
+ * \return TRUE if the property was set, otherwise FALSE
+ */
 shim_bool_t
 shim_obj_set_prop_sym(shim_ctx_t* ctx, shim_val_t* obj, shim_val_t* sym,
   shim_val_t* val)
@@ -563,7 +653,17 @@ shim_obj_set_prop_sym(shim_ctx_t* ctx, shim_val_t* obj, shim_val_t* sym,
   return jsobj->Set(SHIM_TO_VAL(sym), SHIM_TO_VAL(val));
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param obj The given object
+ * \param data The data to be associated with the object
+ * \return TRUE if the data was able to be associated, otherwise FALSE
+ *
+ * Use this to associate C memory with a given object, which can be recalled
+ * at a later time with shim_obj_get_private()
+ *
+ * \sa shim_obj_make_weak()
+ */
 shim_bool_t
 shim_obj_set_private(shim_ctx_t* ctx, shim_val_t* obj, void* data)
 {
@@ -571,8 +671,13 @@ shim_obj_set_private(shim_ctx_t* ctx, shim_val_t* obj, void* data)
   return jsobj->SetHiddenValue(hidden_private, External::New(data));
 }
 
-
-int
+/**
+ * \param ctx The currently executing context
+ * \param recv The object to add the functions to
+ * \param funcs The null terminated array of functions
+ * \return TRUE if all functions were able to be added, otherwise FALSE
+ */
+shim_bool_t
 shim_obj_set_funcs(shim_ctx_t* ctx, shim_val_t* recv,
   const shim_fspec_t* funcs)
 {
@@ -592,7 +697,13 @@ shim_obj_set_funcs(shim_ctx_t* ctx, shim_val_t* recv,
   return TRUE;
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param obj The the given object
+ * \param name The name of the property
+ * \param rval The actual value returned
+ * \return TRUE if object had the propert, otherwise FALSE
+ */
 shim_bool_t
 shim_obj_get_prop_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   shim_val_t* rval)
@@ -605,6 +716,14 @@ shim_obj_get_prop_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param obj The the given object
+ * \param idx The id of the property
+ * \param rval The actual value returned
+ * \return TRUE if object had the propert, otherwise FALSE
+ */
+shim_bool_t
 shim_bool_t
 shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t idx,
   shim_val_t* rval)
@@ -617,6 +736,14 @@ shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t idx,
 }
 
 
+/**
+ * \param ctx The currently executing context
+ * \param obj The the given object
+ * \param sym The symbol of the property
+ * \param rval The actual value returned
+ * \return TRUE if object had the propert, otherwise FALSE
+ */
+shim_bool_t
 shim_bool_t
 shim_obj_get_prop_sym(shim_ctx_t* ctx, shim_val_t* obj, shim_val_t* sym,
   shim_val_t* rval)
@@ -629,15 +756,26 @@ shim_obj_get_prop_sym(shim_ctx_t* ctx, shim_val_t* obj, shim_val_t* sym,
 }
 
 
-void*
-shim_obj_get_private(shim_ctx_t* ctx, shim_val_t* obj)
+/**
+ * \param ctx The currently executing context
+ * \param obj The the given object
+ * \param data The actual data
+ * \return TRUE if the object had hidden data, otherwise FALSE
+ */
+shim_bool_t
+shim_obj_get_private(shim_ctx_t* ctx, shim_val_t* obj, void** data)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
   Local<Value> ext = jsobj->GetHiddenValue(hidden_private);
-  return ext.As<External>()->Value();
+  *data = ext.As<External>()->Value();
+  return TRUE;
 }
 
-
+/**
+ * \param ctx The currently executing context
+ * \param val The the given object
+ * \return The created persistent
+ */
 shim_val_t*
 shim_persistent_new(shim_ctx_t* ctx, shim_val_t* val)
 {
@@ -651,7 +789,9 @@ shim_persistent_new(shim_ctx_t* ctx, shim_val_t* val)
   return shim_val_alloc(ctx, pobj);
 }
 
-
+/**
+ * \param val The persistent to dispose
+ */
 void
 shim_persistent_dispose(shim_val_t* val)
 {
@@ -659,12 +799,6 @@ shim_persistent_dispose(shim_val_t* val)
   tmp.Dispose();
   free(val);
 }
-
-
-typedef struct weak_baton_s {
-  shim_weak_cb weak_cb;
-  void* data;
-} weak_baton_t;
 
 
 void
@@ -683,7 +817,13 @@ common_weak_cb(Persistent<Value> obj, void* data)
   delete baton;
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param val Persistent to make weak
+ * \param data Arbitrary data to pass to the weak_cb
+ * \param weak_cb Callback that will be called when the object is about to be
+ * free
+ */
 void
 shim_obj_make_weak(shim_ctx_t* ctx, shim_val_t* val, void* data,
   shim_weak_cb weak_cb)
@@ -698,7 +838,9 @@ shim_obj_make_weak(shim_ctx_t* ctx, shim_val_t* val, void* data,
   tmp.MakeWeak(baton, common_weak_cb);
 }
 
-
+/**
+ * \param val The given persistent
+ */
 void
 shim_obj_clear_weak(shim_val_t* val)
 {
@@ -706,7 +848,15 @@ shim_obj_clear_weak(shim_val_t* val)
   tmp.ClearWeak();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param cfunc The function pointer to be executed
+ * \param argc The number of arguments the function takes
+ * \param flags The flags for the function
+ * \param name The name of the function
+ * \param hint Arbitrary data to keep associated with the function
+ * \return The wrapped function
+ */
 shim_val_t*
 shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc, int32_t flags,
   const char* name, void* hint)
@@ -718,9 +868,17 @@ shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc, int32_t flags,
   return shim_val_alloc(ctx, fh);
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param self The this parameter of the function call
+ * \param sym The symbol representing the name of the function
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
-shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* name,
+shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
 {
   assert(self != NULL);
@@ -734,7 +892,15 @@ shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* name,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param self The this parameter of the function call
+ * \param name The name of the function
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
 shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self, const char* name,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
@@ -748,7 +914,15 @@ shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self, const char* name,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param self The this parameter of the function call
+ * \param func The function to be called
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
 shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* func,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
@@ -770,7 +944,15 @@ shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* func,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param self The this parameter of the function call
+ * \param sym The symbol representing the name of the function
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
 shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
@@ -790,7 +972,15 @@ shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param self The this parameter of the function call
+ * \param fval The function to call
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
 shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
@@ -818,7 +1008,15 @@ shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param obj The this parameter of the function call
+ * \param name The name of the function
+ * \param argc The number of args to pass the function
+ * \param argv The array of arguments to pass to the function
+ * \param rval The return value of the function
+ * \return TRUE if the function succeeded, otherwise FALSE
+ */
 shim_bool_t
 shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   size_t argc, shim_val_t** argv, shim_val_t* rval)
@@ -838,91 +1036,138 @@ shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   return !tr->HasCaught();
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param d The value of the new number
+ * \return The wrapped number
+ */
 shim_val_t*
 shim_number_new(shim_ctx_t* ctx, double d)
 {
   return shim_val_alloc(ctx, Number::New(d));
 }
 
-
+/**
+ * \param val The given number
+ * \return The value of the number
+ */
 double
-shim_number_val(shim_val_t* val)
+shim_number_value(shim_val_t* val)
 {
   return SHIM_TO_VAL(val)->NumberValue();
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param i The value of the new integer
+ * \return The wrapped integer
+ */
 shim_val_t*
 shim_integer_new(shim_ctx_t* ctx, int32_t i)
 {
   return shim_val_alloc(ctx, Integer::New(i));
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param i The value of the new integer
+ * \return The wrapped integer
+ */
 shim_val_t*
 shim_integer_uint(shim_ctx_t* ctx, uint32_t i)
 {
   return shim_val_alloc(ctx, Integer::NewFromUnsigned(i));
 }
 
-
+/**
+ * \param val The given integer
+ * \return The value of the integer
+ */
 int64_t
 shim_integer_value(shim_val_t* val)
 {
   return SHIM_TO_VAL(val)->IntegerValue();
 }
 
-
+/**
+ * \param val The given integer
+ * \return The int32_t value of the integer
+ */
 int32_t
 shim_integer_int32_value(shim_val_t* val)
 {
   return SHIM_TO_VAL(val)->Int32Value();
 }
 
-
+/**
+ * \param val The given integer
+ * \return The uint32_t value of the integer
+ */
 uint32_t
 shim_integer_uint32_value(shim_val_t* val)
 {
   return SHIM_TO_VAL(val)->Uint32Value();
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \return Wrapped empty string
+ */
 shim_val_t*
 shim_string_new(shim_ctx_t* ctx)
 {
   return shim_val_alloc(ctx, String::Empty());
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param data Source null terminated string
+ * \return The wrapped string
+ */
 shim_val_t*
 shim_string_new_copy(shim_ctx_t* ctx, const char* data)
 {
   return shim_val_alloc(ctx, String::New(data));
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param data Source string
+ * \param len Length of created string
+ * \return The wrapped string
+ */
 shim_val_t*
 shim_string_new_copyn(shim_ctx_t* ctx, const char* data, size_t len)
 {
   return shim_val_alloc(ctx, String::New(data, len));
 }
 
-
+/**
+ * \param val The given string
+ * \return The length of the string
+ */
 size_t
 shim_string_length(shim_val_t* val)
 {
   return OBJ_TO_STRING(SHIM_TO_VAL(val))->Length();
 }
 
-
+/**
+ * \param val The given string
+ * \return The length of the UTF-8 encoded string
+ */
 size_t
 shim_string_length_utf8(shim_val_t* val)
 {
   return OBJ_TO_STRING(SHIM_TO_VAL(val))->Utf8Length();
 }
 
-
+/**
+ * \param val The given string
+ * \return The C string value of the string
+ *
+ * The caller is responsible for free'ing this memory
+ */
 const char*
 shim_string_value(shim_val_t* val)
 {
@@ -930,7 +1175,13 @@ shim_string_value(shim_val_t* val)
   return strdup(*str);
 }
 
-
+/**
+ * \param val The given string
+ * \param buff The destination buffer
+ * \param start The starting position to encode
+ * \param len The length of the string to create
+ * \param options The options for how to encode the string
+ */
 size_t
 shim_string_write_ascii(shim_val_t* val, char* buff, size_t start, size_t len,
   int32_t options)
@@ -938,21 +1189,34 @@ shim_string_write_ascii(shim_val_t* val, char* buff, size_t start, size_t len,
   return OBJ_TO_STRING(SHIM_TO_VAL(val))->WriteAscii(buff, start, len);
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param len Length of array to be created
+ * \return Wrapped array
+ */
 shim_val_t*
 shim_array_new(shim_ctx_t* ctx, size_t len)
 {
   return shim_val_alloc(ctx, Array::New(len));
 }
 
-
+/**
+ * \param arr Given array
+ * \return Length of the array
+ */
 size_t
 shim_array_length(shim_val_t* arr)
 {
   return OBJ_TO_ARRAY(SHIM_TO_VAL(arr))->Length();
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param arr Given array
+ * \param idx Index of element
+ * \param rval Actual return value
+ * \return TRUE if the value existed, otherwise FALSE
+ */
 shim_bool_t
 shim_array_get(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx, shim_val_t* rval)
 {
@@ -960,14 +1224,24 @@ shim_array_get(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx, shim_val_t* rval)
   return TRUE;
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param arr Given array
+ * \param idx Index of element
+ * \param val Value to be set
+ * \return TRUE if the value was able to be set, otherwise FALSE
+ */
 shim_bool_t
 shim_array_set(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx, shim_val_t* val)
 {
   return OBJ_TO_ARRAY(SHIM_TO_VAL(arr))->Set(idx, SHIM_TO_VAL(val));
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param len Size of buffer to create
+ * \return Wrapped buffer
+ */
 shim_val_t*
 shim_buffer_new(shim_ctx_t* ctx, size_t len)
 {
@@ -978,7 +1252,12 @@ shim_buffer_new(shim_ctx_t* ctx, size_t len)
 #endif
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param data Data to be copied
+ * \param len Length of data to be copied
+ * \return Wrapped buffer
+ */
 shim_val_t*
 shim_buffer_new_copy(shim_ctx_t* ctx, const char* data, size_t len)
 {
@@ -991,7 +1270,16 @@ shim_buffer_new_copy(shim_ctx_t* ctx, const char* data, size_t len)
 #endif
 }
 
-
+/**
+ * \param ctx Current executing context
+ * \param data Data to be used for underlying memory
+ * \param len Size of memory being used
+ * \param cb Callback that is called when buffer is to be freed
+ * \param hint Arbitrary data passed to the callback
+ * \return Wrapped buffer
+ *
+ * The underlying memory is not copied, but used in place
+ */
 shim_val_t*
 shim_buffer_new_external(shim_ctx_t* ctx, char* data, size_t len,
   shim_buffer_free cb, void* hint)
@@ -1003,7 +1291,10 @@ shim_buffer_new_external(shim_ctx_t* ctx, char* data, size_t len,
 #endif
 }
 
-
+/**
+ * \param val THe given buffer
+ * \return Pointer to the underlying memory
+ */
 char*
 shim_buffer_value(shim_val_t* val)
 {
@@ -1020,7 +1311,10 @@ shim_buffer_value(shim_val_t* val)
 #endif
 }
 
-
+/**
+ * \param val The given buffer
+ * \return THe size of the buffer
+ */
 size_t
 shim_buffer_length(shim_val_t* val)
 {
@@ -1037,42 +1331,68 @@ shim_buffer_length(shim_val_t* val)
 #endif
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param data The external data to wrap
+ * \return Wrapped external
+ *
+ * This is an object that is safe to pass to and from JavaScript.
+ * \sa persistents
+ */
 shim_val_t*
 shim_external_new(shim_ctx_t* ctx, void* data)
 {
   return shim_val_alloc(ctx, External::New(data));
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param obj The given external
+ * \return The pointer to the wrapped memory
+ */
 void*
 shim_external_value(shim_ctx_t* ctx, shim_val_t* obj)
 {
   return SHIM_TO_VAL(obj).As<External>()->Value();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to be used for error
+ * \return The wrapped Error
+ */
 shim_val_t*
 shim_error_new(shim_ctx_t* ctx, const char* msg)
 {
   return shim_val_alloc(ctx, Exception::Error(String::New(msg)));
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to be used for error
+ * \return The wrapped TypeError
+ */
 shim_val_t*
 shim_error_type_new(shim_ctx_t* ctx, const char* msg)
 {
   return shim_val_alloc(ctx, Exception::TypeError(String::New(msg)));
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to be used for error
+ * \return The wrapped RangeError
+ */
 shim_val_t*
 shim_error_range_new(shim_ctx_t* ctx, const char* msg)
 {
   return shim_val_alloc(ctx, Exception::RangeError(String::New(msg)));
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \return TRUE if an exception is pending, otherwise FALSE
+ */
 shim_bool_t
 shim_exception_pending(shim_ctx_t* ctx)
 {
@@ -1080,15 +1400,22 @@ shim_exception_pending(shim_ctx_t* ctx)
   return trycatch->HasCaught();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param val The error to use as the pending exception
+ */
 void
 shim_exception_set(shim_ctx_t* ctx, shim_val_t* val)
 {
   ThrowException(SHIM_TO_VAL(val));
 }
 
-
-int
+/**
+ * \param ctx Currently executing context
+ * \param rval The currently pending exception
+ * \return TRUE if there was an exception, otherwise FALSE
+ */
+shim_bool_t
 shim_exception_get(shim_ctx_t* ctx, shim_val_t* rval)
 {
   TryCatch* trycatch = static_cast<TryCatch*>(ctx->trycatch);
@@ -1096,7 +1423,9 @@ shim_exception_get(shim_ctx_t* ctx, shim_val_t* rval)
   return TRUE;
 }
 
-
+/**
+ * \param ctx Currently executing context
+ */
 void
 shim_exception_clear(shim_ctx_t* ctx)
 {
@@ -1104,7 +1433,10 @@ shim_exception_clear(shim_ctx_t* ctx)
   trycatch->Reset();
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to set as the pending exception
+ */
 void
 shim_throw_error(shim_ctx_t* ctx, const char* msg, ...)
 {
@@ -1114,7 +1446,10 @@ shim_throw_error(shim_ctx_t* ctx, const char* msg, ...)
   va_end(ap);
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to set as the pending exception
+ */
 void
 shim_throw_type_error(shim_ctx_t* ctx, const char* msg, ...)
 {
@@ -1124,7 +1459,10 @@ shim_throw_type_error(shim_ctx_t* ctx, const char* msg, ...)
   va_end(ap);
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param msg The message to set as the pending exception
+ */
 void
 shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...)
 {
@@ -1134,7 +1472,13 @@ shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...)
   va_end(ap);
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param arg Given wrapped value
+ * \param type The destination type
+ * \param rval The pointer to where the data will be stored
+ * \return TRUE if it was able to convert, otherwise FALSE
+ */
 shim_bool_t
 shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
   void* rval)
@@ -1180,7 +1524,14 @@ shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
   return TRUE;
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param args Arguments passed to the function
+ * \param idx Index of the argument to unpack
+ * \param type The destination type
+ * \param rval The pointer to the destination
+ * \return TRUE if it was able to unpack, otherwise FALSE
+ */
 shim_bool_t
 shim_unpack_one(shim_ctx_t* ctx, shim_args_t* args, uint32_t idx,
   shim_type_t type, void* rval)
@@ -1189,7 +1540,19 @@ shim_unpack_one(shim_ctx_t* ctx, shim_args_t* args, uint32_t idx,
   return shim::shim_unpack_type(ctx, arg, type, rval);
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param args Arguments passed to the function
+ * \param type The first type to unpack
+ * \return TRUE if all desired arguments were able to be unpacked, otherwise
+ * FALSE
+ *
+ * Arguments are passed in pairs of shim_type_t and a pointer to their
+ * destination, you end the set of pairs by a single SHIM_TYPE_UNKNOWN.
+ *
+ * In the event an argument was unable to be unpacked, FALSE is returned and
+ * an exception is set.
+ */
 shim_bool_t
 shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
 {
@@ -1218,14 +1581,21 @@ shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
   return TRUE;
 }
 
-
+/**
+ * \param args The arguments passed to the function
+ * \return The amount of arguments passed to the function
+ */
 size_t
 shim_args_length(shim_args_t* args)
 {
   return args->argc;
 }
 
-
+/**
+ * \param args The arguments passed to the function
+ * \param idx The index of the desired argument
+ * \return The wrapped argument
+ */
 shim_val_t*
 shim_args_get(shim_args_t* args, size_t idx)
 {
@@ -1233,7 +1603,12 @@ shim_args_get(shim_args_t* args, size_t idx)
   return args->argv[idx];
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param args The arguments passed to the function
+ * \param val The value to use for return
+ * \return TRUE if it was able to set the return value, otherwise FALSE
+ */
 shim_bool_t
 shim_args_set_rval(shim_ctx_t* ctx, shim_args_t* args, shim_val_t* val)
 {
@@ -1246,14 +1621,22 @@ shim_args_set_rval(shim_ctx_t* ctx, shim_args_t* args, shim_val_t* val)
   return TRUE;
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param args The arguments passed to the function
+ * \return The `this` associated with the executing function
+ */
 shim_val_t*
 shim_args_get_this(shim_ctx_t* ctx, shim_args_t* args)
 {
   return args->self;
 }
 
-
+/**
+ * \param ctx Currently executing context
+ * \param args The arguments passed to the function
+ * \return Pointer to the arbitrary data associated with the executing function
+ */
 void*
 shim_args_get_data(shim_ctx_t* ctx, shim_args_t* args)
 {
@@ -1287,10 +1670,13 @@ before_after(uv_work_t* req)
   delete req;
 }
 
-
+/**
+ * \param work_cb Callback that will be called on a different thread
+ * \param after_cb Callback that will be called on the main thread
+ * \param hint Arbitrary data to be passed to both callbacks
+ */
 void
-shim_queue_work(shim_work_cb work_cb,
-  shim_after_work after_cb, void* hint)
+shim_queue_work(shim_work_cb work_cb, shim_after_work after_cb, void* hint)
 {
   uv_work_t* req = new uv_work_t;
   shim_work_t* work = new shim_work_t;
@@ -1301,7 +1687,10 @@ shim_queue_work(shim_work_cb work_cb,
   uv_queue_work(uv_default_loop(), req, before_work, before_after);
 }
 
-
+/**
+ * \param type The given type
+ * \return The string representation of the given type
+ */
 const char*
 shim_type_str(shim_type_t type)
 {

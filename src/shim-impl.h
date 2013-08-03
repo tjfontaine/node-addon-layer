@@ -57,6 +57,12 @@ struct shim_work_s {
 extern shim_val_t* shim__undefined;
 extern shim_val_t* shim__null;
 
+
+typedef struct weak_baton_s {
+  shim_weak_cb weak_cb;
+  void* data;
+} weak_baton_t;
+
 #ifdef __cplusplus
 }
 #endif
