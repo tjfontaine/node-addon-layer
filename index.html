@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>node-addon-layer: Main Page</title>
+<title>node-addon-layer: Addon Layer</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -77,13 +77,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="header">
   <div class="headertitle">
-<div class="title">node-addon-layer Documentation</div>  </div>
+<div class="title">Addon Layer </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>This documentation discusses the best practices and the API for the C API layer for node.</p>
+<h2>Getting Started</h2>
+<p>In <code>test.c</code></p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;shim.h&quot;</span></div>
+<div class="line"></div>
+<div class="line">shim_bool_t</div>
+<div class="line">foobar(<a class="code" href="structshim__ctx__s.html" title="The opaque handle that represents the currently executing context. ">shim_ctx_t</a>* ctx, <a class="code" href="structshim__args__s.html" title="The opaque handle that represents the arguments passed to this function. ">shim_args_t</a>* args)</div>
+<div class="line">{</div>
+<div class="line">  <a class="code" href="structshim__args__s.html" title="The opaque handle that represents the arguments passed to this function. ">shim_args_t</a>* ret = <a class="code" href="group__strings.html#gaade4cd8781f011aa3e6e7f9c3de85485">shim_string_new_copy</a>(ctx, <span class="stringliteral">&quot;Hello World&quot;</span>);</div>
+<div class="line">  <a class="code" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval</a>(ctx, args, ret);</div>
+<div class="line">  <span class="keywordflow">return</span> TRUE;</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">shim_bool_t</div>
+<div class="line">myinit(<a class="code" href="structshim__ctx__s.html" title="The opaque handle that represents the currently executing context. ">shim_ctx_t</a>* ctx, <a class="code" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_t</a>* exports, <a class="code" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_t</a>* module)</div>
+<div class="line">{</div>
+<div class="line">  <a class="code" href="structshim__fspec__s.html" title="Describes a function signature. ">shim_fspec_t</a> funcs[] = {</div>
+<div class="line">    SHIM_FS(foobar),</div>
+<div class="line">    SHIM_FS_END,</div>
+<div class="line">  }</div>
+<div class="line"></div>
+<div class="line">  <a class="code" href="group__objects.html#ga67f7ca5e1888260c83d07f8da32a8329">shim_obj_set_funcs</a>(ctx, exports, funcs);</div>
+<div class="line"></div>
+<div class="line">  <span class="keywordflow">return</span> TRUE;</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">SHIM_MODULE(mymodule, myinit)</div>
+</div><!-- fragment --><p>And then in <code>index.js</code></p>
+<div class="fragment"><div class="line">var mymodule = require(<span class="stringliteral">&#39;bindings&#39;</span>)(<span class="stringliteral">&#39;mymodule&#39;</span>);</div>
+<div class="line"></div>
+<div class="line">console.log(<span class="stringliteral">&#39;module return&#39;</span>, mymodule.foobar());</div>
+</div><!-- fragment --><h2>See Also</h2>
+<ul>
+<li><a href="modules.html">Modules</a></li>
+<li><a href="md_docs_memory.html">Memory Management</a> </li>
+</ul>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Aug 4 2013 13:45:27 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Aug 4 2013 14:41:30 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>
