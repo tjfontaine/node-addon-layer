@@ -88,38 +88,55 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a class="code" href="group__core.html#gaab77202d0d00070f145e35d1299b0697">shim_bool_t</a></div>
 <div class="line">foobar(<a class="code" href="group__core.html#ga01debe564a9759f12e6e89d300b07c9e">shim_ctx_t</a>* ctx, <a class="code" href="group__core.html#ga7ac61a620e8b04007a7ed3445b6c76c1">shim_args_t</a>* args)</div>
 <div class="line">{</div>
-<div class="line">  <a class="code" href="group__core.html#ga7ac61a620e8b04007a7ed3445b6c76c1">shim_args_t</a>* ret = <a class="code" href="group__strings.html#gaade4cd8781f011aa3e6e7f9c3de85485">shim_string_new_copy</a>(ctx, <span class="stringliteral">&quot;Hello World&quot;</span>);</div>
+<div class="line">  <span class="comment">/* create a new string with contents &quot;Hello World&quot; */</span></div>
+<div class="line">  <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* ret = <a class="code" href="group__strings.html#gaade4cd8781f011aa3e6e7f9c3de85485">shim_string_new_copy</a>(ctx, <span class="stringliteral">&quot;Hello World&quot;</span>);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* set that string as the return value */</span></div>
 <div class="line">  <a class="code" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval</a>(ctx, args, ret);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* TRUE because this function didn&#39;t fail */</span></div>
 <div class="line">  <span class="keywordflow">return</span> TRUE;</div>
+<div class="line">  <span class="comment">/* If this were false, there probably would be an exception pending */</span></div>
+<div class="line">  <span class="comment">/* shim_exception_pending() */</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line"><a class="code" href="group__core.html#gaab77202d0d00070f145e35d1299b0697">shim_bool_t</a></div>
 <div class="line">myinit(<a class="code" href="group__core.html#ga01debe564a9759f12e6e89d300b07c9e">shim_ctx_t</a>* ctx, <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* exports, <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* module)</div>
 <div class="line">{</div>
+<div class="line">  <span class="comment">/* The list of C functions we want to wrap as JavaScript functions */</span></div>
 <div class="line">  <a class="code" href="structshim__fspec__s.html">shim_fspec_t</a> funcs[] = {</div>
-<div class="line">    <a class="code" href="group__core.html#ga4b495af532f3e75eef07e833be3352e2">SHIM_FS</a>(foobar),</div>
-<div class="line">    <a class="code" href="group__core.html#gafb2a026caa9ead3f40235abf749a12a2">SHIM_FS_END</a>,</div>
+<div class="line">    <a class="code" href="group__core.html#ga4b495af532f3e75eef07e833be3352e2">SHIM_FS</a>(foobar), <span class="comment">/* wrap the c function foobar, and export it as &quot;foobar&quot; */</span></div>
+<div class="line">    <a class="code" href="group__core.html#gafb2a026caa9ead3f40235abf749a12a2">SHIM_FS_END</a>, <span class="comment">/* no more functions to wrap */</span></div>
 <div class="line">  }</div>
 <div class="line"></div>
+<div class="line">  <span class="comment">/* Add the list of functions to the `exports` object */</span></div>
 <div class="line">  <a class="code" href="group__objects.html#ga67f7ca5e1888260c83d07f8da32a8329">shim_obj_set_funcs</a>(ctx, exports, funcs);</div>
 <div class="line"></div>
+<div class="line">  <span class="comment">/* The module initialized successfully */</span></div>
 <div class="line">  <span class="keywordflow">return</span> TRUE;</div>
 <div class="line">}</div>
 <div class="line"></div>
+<div class="line"><span class="comment">/*</span></div>
+<div class="line"><span class="comment"> * Define a module `mymodule` whose initialization function is `myinit` which</span></div>
+<div class="line"><span class="comment"> * will be called the first time the module is `require()`d.</span></div>
+<div class="line"><span class="comment"> */</span></div>
 <div class="line"><a class="code" href="group__core.html#ga90ccc4aec9a0dba65335fdcf1ed3ca0d">SHIM_MODULE</a>(mymodule, myinit)</div>
 </div><!-- fragment --><p>And then in <code>index.js</code></p>
 <div class="fragment"><div class="line">var mymodule = require(<span class="stringliteral">&#39;bindings&#39;</span>)(<span class="stringliteral">&#39;mymodule&#39;</span>);</div>
 <div class="line"></div>
 <div class="line">console.log(<span class="stringliteral">&#39;module return&#39;</span>, mymodule.foobar());</div>
-</div><!-- fragment --><h2>See Also</h2>
+</div><!-- fragment --><h2>Further Reading</h2>
 <ul>
-<li><a href="modules.html">Modules</a></li>
-<li><a href="md_docs_memory.html">Memory Management</a> </li>
+<li><a href="md_docs_memory.html">Memory Management</a></li>
+<li><a href="md_docs_design.html">Module Design</a></li>
+<li><a href="md_docs_handle.html">Native Handles</a></li>
+<li><a href="md_docs_functions.html">Functions</a></li>
+<li><a href="modules.html">API Reference</a> </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 7 2013 11:56:35 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 7 2013 15:17:55 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>

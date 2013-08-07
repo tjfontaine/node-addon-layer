@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>node-addon-layer: Data Structure Index</title>
+<title>node-addon-layer: Native Handles</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -38,9 +38,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
+      <li class="current"><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
@@ -60,14 +60,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li class="current"><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
-      <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
-    </ul>
-  </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -82,21 +74,54 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">Data Structure Index</div>  </div>
+<div class="title">Native Handles </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="qindex"><a class="qindex" href="#letter_S">S</a></div>
-<table style="margin: 10px; white-space: nowrap;" align="center" width="95%" border="0" cellspacing="0" cellpadding="0">
-<tr><td rowspan="2" valign="bottom"><a name="letter_S"></a><table border="0" cellspacing="0" cellpadding="0"><tr><td><div class="ah">&#160;&#160;S&#160;&#160;</div></td></tr></table>
-</td><td valign="top"><a class="el" href="structshim__module__struct.html">shim_module_struct</a>&#160;&#160;&#160;</td><td></td></tr>
-<tr><td></td><td></td></tr>
-<tr><td valign="top"><a class="el" href="structshim__fspec__s.html">shim_fspec_s</a>&#160;&#160;&#160;</td><td></td><td></td></tr>
-<tr><td></td><td></td><td></td></tr>
-</table>
-<div class="qindex"><a class="qindex" href="#letter_S">S</a></div>
-</div><!-- contents -->
+<div class="textblock"><p>A common pattern is to write a binding to a library that intializes and returns a handle that is used for all subsequent library operations. Similarly you will want to know when it is necessary to clean up the underlying resources (without necessarily being explicit in JavaScript).</p>
+<div class="fragment"><div class="line"><span class="comment">/* Called when the handle is about to be collected by the VM */</span></div>
+<div class="line"><span class="keywordtype">void</span></div>
+<div class="line">handle_free_cb(<a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* phandle, <span class="keywordtype">void</span>* data)</div>
+<div class="line">{</div>
+<div class="line">  <span class="comment">/* unwrap the handle */</span></div>
+<div class="line">  <span class="keywordtype">void</span>* handle = <a class="code" href="group__externals.html#ga4ef5ce8c0444f281d0cf49f5d8537b6d">shim_external_value</a>(phandle);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* cleanup any resources for the library */</span></div>
+<div class="line">  some_library_free(handle);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* cleanup any resources for the value */</span></div>
+<div class="line">  <a class="code" href="group__persistents.html#ga510f55514e24cc09949d0343e7c252e1">shim_persistent_dispose</a>(phandle);</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line"><a class="code" href="group__core.html#gaab77202d0d00070f145e35d1299b0697">shim_bool_t</a></div>
+<div class="line">library_init(<a class="code" href="group__core.html#ga01debe564a9759f12e6e89d300b07c9e">shim_ctx_t</a>* ctx, <a class="code" href="group__core.html#ga7ac61a620e8b04007a7ed3445b6c76c1">shim_args_t</a>* args)</div>
+<div class="line">{</div>
+<div class="line">  <span class="comment">/* Initialize some library */</span></div>
+<div class="line">  <span class="keywordtype">void</span>* handle = some_library_init();</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* Wrap the library handle in an external */</span></div>
+<div class="line">  <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* ehandle = <a class="code" href="group__externals.html#gad8c34362075c28c5fad2e8daf100906f">shim_external_new</a>(ctx, handle);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* Turn the handle into a Persistent */</span></div>
+<div class="line">  <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* phandle = <a class="code" href="group__persistents.html#gacabfcfa8aa01d74d0d4189a0d77e6f60">shim_persistent_new</a>(ctx, ehandle);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* Release the original wrapper */</span></div>
+<div class="line">  <a class="code" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release</a>(ehandle);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/*</span></div>
+<div class="line"><span class="comment">   * Only valid for persistents, use this to get notified if JavaScript</span></div>
+<div class="line"><span class="comment">   * is about to collect your object, this lets you handle any finalizer</span></div>
+<div class="line"><span class="comment">   * work on your own</span></div>
+<div class="line"><span class="comment">   */</span></div>
+<div class="line">  <a class="code" href="group__persistents.html#gadad95ae5256a3e9960447fcd6afb88a3">shim_obj_make_weak</a>(ctx, phandle, NULL, handle_free_cb);</div>
+<div class="line"></div>
+<div class="line">  <span class="comment">/* return the handle to JavaScript */</span></div>
+<div class="line">  <a class="code" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval</a>(ctx, args, phandle);</div>
+<div class="line">  <span class="keywordflow">return</span> TRUE;</div>
+<div class="line">}</div>
+</div><!-- fragment --> </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Wed Aug 7 2013 15:17:55 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
