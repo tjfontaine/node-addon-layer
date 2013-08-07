@@ -66,7 +66,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -85,20 +85,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>In <code>test.c</code></p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;shim.h&quot;</span></div>
 <div class="line"></div>
-<div class="line">shim_bool_t</div>
-<div class="line">foobar(<a class="code" href="structshim__ctx__s.html" title="The opaque handle that represents the currently executing context. ">shim_ctx_t</a>* ctx, <a class="code" href="structshim__args__s.html" title="The opaque handle that represents the arguments passed to this function. ">shim_args_t</a>* args)</div>
+<div class="line"><a class="code" href="group__core.html#gaab77202d0d00070f145e35d1299b0697">shim_bool_t</a></div>
+<div class="line">foobar(<a class="code" href="group__core.html#ga01debe564a9759f12e6e89d300b07c9e">shim_ctx_t</a>* ctx, <a class="code" href="group__core.html#ga7ac61a620e8b04007a7ed3445b6c76c1">shim_args_t</a>* args)</div>
 <div class="line">{</div>
-<div class="line">  <a class="code" href="structshim__args__s.html" title="The opaque handle that represents the arguments passed to this function. ">shim_args_t</a>* ret = <a class="code" href="group__strings.html#gaade4cd8781f011aa3e6e7f9c3de85485">shim_string_new_copy</a>(ctx, <span class="stringliteral">&quot;Hello World&quot;</span>);</div>
+<div class="line">  <a class="code" href="group__core.html#ga7ac61a620e8b04007a7ed3445b6c76c1">shim_args_t</a>* ret = <a class="code" href="group__strings.html#gaade4cd8781f011aa3e6e7f9c3de85485">shim_string_new_copy</a>(ctx, <span class="stringliteral">&quot;Hello World&quot;</span>);</div>
 <div class="line">  <a class="code" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval</a>(ctx, args, ret);</div>
 <div class="line">  <span class="keywordflow">return</span> TRUE;</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">shim_bool_t</div>
-<div class="line">myinit(<a class="code" href="structshim__ctx__s.html" title="The opaque handle that represents the currently executing context. ">shim_ctx_t</a>* ctx, <a class="code" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_t</a>* exports, <a class="code" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_t</a>* module)</div>
+<div class="line"><a class="code" href="group__core.html#gaab77202d0d00070f145e35d1299b0697">shim_bool_t</a></div>
+<div class="line">myinit(<a class="code" href="group__core.html#ga01debe564a9759f12e6e89d300b07c9e">shim_ctx_t</a>* ctx, <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* exports, <a class="code" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>* module)</div>
 <div class="line">{</div>
-<div class="line">  <a class="code" href="structshim__fspec__s.html" title="Describes a function signature. ">shim_fspec_t</a> funcs[] = {</div>
-<div class="line">    SHIM_FS(foobar),</div>
-<div class="line">    SHIM_FS_END,</div>
+<div class="line">  <a class="code" href="structshim__fspec__s.html">shim_fspec_t</a> funcs[] = {</div>
+<div class="line">    <a class="code" href="group__core.html#ga4b495af532f3e75eef07e833be3352e2">SHIM_FS</a>(foobar),</div>
+<div class="line">    <a class="code" href="group__core.html#gafb2a026caa9ead3f40235abf749a12a2">SHIM_FS_END</a>,</div>
 <div class="line">  }</div>
 <div class="line"></div>
 <div class="line">  <a class="code" href="group__objects.html#ga67f7ca5e1888260c83d07f8da32a8329">shim_obj_set_funcs</a>(ctx, exports, funcs);</div>
@@ -106,7 +106,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">  <span class="keywordflow">return</span> TRUE;</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">SHIM_MODULE(mymodule, myinit)</div>
+<div class="line"><a class="code" href="group__core.html#ga90ccc4aec9a0dba65335fdcf1ed3ca0d">SHIM_MODULE</a>(mymodule, myinit)</div>
 </div><!-- fragment --><p>And then in <code>index.js</code></p>
 <div class="fragment"><div class="line">var mymodule = require(<span class="stringliteral">&#39;bindings&#39;</span>)(<span class="stringliteral">&#39;mymodule&#39;</span>);</div>
 <div class="line"></div>
@@ -119,7 +119,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 7 2013 11:11:22 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 7 2013 11:56:35 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>

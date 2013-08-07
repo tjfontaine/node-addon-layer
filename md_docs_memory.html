@@ -65,7 +65,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">Memory Management </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> is a thin opaque pointer to a V8 heap object. Memory management of <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s is by and large explicit. Aside from the noted exceptions below, all returned <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s should be passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>. This will only cleanup any resources the addon layer has allocated. Releasing a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> does not indicate to V8 that it may now garbage collect the underlying object.</p>
+<div class="textblock"><p><a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a> is a thin opaque pointer to a V8 heap object. Memory management of <a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>'s is by and large explicit. Aside from the noted exceptions below, all returned <a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>'s should be passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>. This will only cleanup any resources the addon layer has allocated. Releasing a <a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a> does not indicate to V8 that it may now garbage collect the underlying object.</p>
 <h2>Local vs Persistent</h2>
 <p>In V8 there are two basic kinds of values:</p>
 <ul>
@@ -93,11 +93,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </li>
 </ul>
-<p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s will be a Local unless it was returned by <a class="el" href="group__persistents.html#gacabfcfa8aa01d74d0d4189a0d77e6f60">shim_persistent_new()</a>, in which case you'll be returned a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> that wraps a Persistent.</p>
+<p><a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>'s will be a Local unless it was returned by <a class="el" href="group__persistents.html#gacabfcfa8aa01d74d0d4189a0d77e6f60">shim_persistent_new()</a>, in which case you'll be returned a <a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a> that wraps a Persistent.</p>
 <p>Wrapped Persistents should <b>only</b> be released by calling <a class="el" href="group__persistents.html#ga510f55514e24cc09949d0343e7c252e1">shim_persistent_dispose()</a>. Do <b>not</b> use <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>.</p>
 <p>If you want to be notified when the GC is about to collect a value, see <a class="el" href="group__persistents.html#gadad95ae5256a3e9960447fcd6afb88a3">shim_obj_make_weak()</a>.</p>
 <h2>Arguments</h2>
-<p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s retrieved from:</p>
+<p><a class="el" href="group__core.html#ga11881607db69d18ac533345a1f5d40e2">shim_val_t</a>'s retrieved from:</p>
 <ul>
 <li><a class="el" href="group__arguments.html#ga247eaf9586d35691a15bf19fa4cac08d">shim_args_get()</a></li>
 <li><a class="el" href="group__arguments.html#ga4aded492370bd87e41e2f56285d1f9f2">shim_args_get_this()</a></li>
@@ -112,7 +112,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 7 2013 11:11:22 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 7 2013 11:56:35 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>
