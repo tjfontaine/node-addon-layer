@@ -80,14 +80,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">Memory Management </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> is a thin opaque pointer to a V8 heap object. Memory management of <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s is by and large explicit. Aside from the noted exceptions below, all returned <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s should be passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>. This will only cleanup any resources the addon layer has allocated. Releasing a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> does not indicate to V8 that it may now garbage collect the underlying object either.</p>
-<p>It is not generally safe to hold on to a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> for longer than the currently executing boundary function. That is the C function that was called from JavaScript. Unless however you have first made a peristent with <a class="el" href="group__persistents.html#gacabfcfa8aa01d74d0d4189a0d77e6f60">shim_persistent_new()</a>, which should only be used in conjunction with <a class="el" href="group__persistents.html#ga510f55514e24cc09949d0343e7c252e1">shim_persistent_dispose()</a> and <b>not</b> <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>.</p>
-<p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s retrieved from <a class="el" href="group__arguments.html#ga247eaf9586d35691a15bf19fa4cac08d">shim_args_get()</a>, <a class="el" href="group__arguments.html#ga4aded492370bd87e41e2f56285d1f9f2">shim_args_get_this()</a>, or passed to <a class="el" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval()</a> do <b>not</b> need to be <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>'d by you, the addon layer itself will manage that for you when the boundary function has finished executing.</p>
-<p><a class="el" href="group__primitives.html#ga7f1c5ada893fc4971c6735e020e55c4b">shim_null()</a> and <a class="el" href="group__primitives.html#ga5225847a20539a37dbaa7e7f3b94081b">shim_undefined()</a> are unique sentinels/singletons, they are ignored when passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>, it's neither necessary or harmful to do so. </p>
+<div class="textblock"><p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> is a thin opaque pointer to a V8 heap object. Memory management of <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s is by and large explicit. Aside from the noted exceptions below, all returned <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s should be passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>. This will only cleanup any resources the addon layer has allocated. Releasing a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> does not indicate to V8 that it may now garbage collect the underlying object.</p>
+<h2>Local vs Persistent</h2>
+<p>In V8 there are two basic kinds of values:</p>
+<ul>
+<li>Local<ul>
+<li>A value that is valid until the end of a scope, i.e. after the current scope is done executing, if no more references to the value are held the GC may free the resources associated with the value.</li>
+</ul>
+</li>
+<li>Persistent<ul>
+<li>A value which is valid beyond the current scope</li>
+</ul>
+</li>
+</ul>
+<p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s will be a Local unless it was returned by <a class="el" href="group__persistents.html#gacabfcfa8aa01d74d0d4189a0d77e6f60">shim_persistent_new()</a>, in which case you'll be returned a <a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a> that wraps a Persistent.</p>
+<p>Wrapped Persistents should <b>only</b> be released by calling <a class="el" href="group__persistents.html#ga510f55514e24cc09949d0343e7c252e1">shim_persistent_dispose()</a>. Do <b>not</b> use <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>.</p>
+<p>If you want to be notified when the GC is about to collect a value, see <a class="el" href="group__persistents.html#gadad95ae5256a3e9960447fcd6afb88a3">shim_obj_make_weak()</a>.</p>
+<h2>Arguments</h2>
+<p><a class="el" href="structshim__val__s.html" title="The opaque handle that represents a javascript value You should use shim_value_release. ">shim_val_s</a>'s retrieved from:</p>
+<ul>
+<li><a class="el" href="group__arguments.html#ga247eaf9586d35691a15bf19fa4cac08d">shim_args_get()</a></li>
+<li><a class="el" href="group__arguments.html#ga4aded492370bd87e41e2f56285d1f9f2">shim_args_get_this()</a></li>
+</ul>
+<p>or passed to:</p>
+<ul>
+<li><a class="el" href="group__arguments.html#ga2d273b98a97af9e849456d2b0748aa41">shim_args_set_rval()</a></li>
+</ul>
+<p>do <b>not</b> need to be <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>'d, the addon layer will handle the releasing when the boundary function has finished executing.</p>
+<h2>Singletons</h2>
+<p><a class="el" href="group__primitives.html#ga7f1c5ada893fc4971c6735e020e55c4b">shim_null()</a> and <a class="el" href="group__primitives.html#ga5225847a20539a37dbaa7e7f3b94081b">shim_undefined()</a> are singletons, they are ignored when passed to <a class="el" href="group__primitives.html#gab5409cb002417a0324b1ca43b41c4dd2">shim_value_release()</a>, it's neither necessary or harmful to do so. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 7 2013 10:41:58 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 7 2013 11:11:22 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>
