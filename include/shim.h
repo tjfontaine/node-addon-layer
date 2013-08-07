@@ -31,6 +31,8 @@ extern "C" {
 #include "stdint.h"
 #include "node_version.h"
 
+#define SHIM_ABI_VERSION 1
+
 /**
  * \enum shim_type
  * Defines the types natively supported by the addon layer
@@ -98,24 +100,24 @@ struct shim_module_struct {
 };
 
 
-/* Sigh, NODE_MODULE_VERSION isn't in node_version */
-#if defined(NODE_MODULE_VERSION)
-#define SHIM_MODULE_VERSION NODE_MODULE_VERSION
-#elif NODE_VERSION_AT_LEAST(0, 11, 0)
-#define SHIM_MODULE_VERSION 0x000C
-#elif NODE_VERSION_AT_LEAST(0, 10, 0)
-#define SHIM_MODULE_VERSION 0x000B
-#elif NODE_VERSION_AT_LEAST(0, 8, 0)
-#define SHIM_MODULE_VERSION 1
-#else /* 0.8.0 */
-#error "The shim requires at least node v0.8.0"
-#endif /* 0.8.0 */
+/* Sigh, NODE_MODULE_VERSION isn't in node_version.h before 0.12 */
+#ifndef NODE_MODULE_VERSION
+# if NODE_VERSION_AT_LEAST(0, 11, 0)
+#   define NODE_MODULE_VERSION 0x000C
+# elif NODE_VERSION_AT_LEAST(0, 10, 0)
+#   define NODE_MODULE_VERSION 0x000B
+# elif NODE_VERSION_AT_LEAST(0, 8, 0)
+#   define NODE_MODULE_VERSION 1
+# else
+#   error "The shim requires at least node v0.8.0"
+# endif /* checking versions */
+#endif /* checking NODE_MODULE_VERSION defined */
 
 
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
 struct shim_module_struct name ## _module = {                                 \
-  SHIM_MODULE_VERSION,                                                        \
+  NODE_MODULE_VERSION,                                                        \
   NULL,                                                                       \
   __FILE__,                                                                   \
   (node_register_func)&shim_module_initialize,                                \
