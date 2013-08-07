@@ -1,10 +1,10 @@
 # Memory Management
 
-::shim_val_s is a thin opaque pointer to a V8 heap object. Memory management
-of ::shim_val_s's is by and large explicit. Aside from the noted exceptions
-below, all returned ::shim_val_s's should be passed to shim_value_release().
+::shim_val_t is a thin opaque pointer to a V8 heap object. Memory management
+of ::shim_val_t's is by and large explicit. Aside from the noted exceptions
+below, all returned ::shim_val_t's should be passed to shim_value_release().
 This will only cleanup any resources the addon layer has allocated. Releasing
-a ::shim_val_s does not indicate to V8 that it may now garbage collect the
+a ::shim_val_t does not indicate to V8 that it may now garbage collect the
 underlying object.
 
 ## Local vs Persistent
@@ -18,8 +18,8 @@ free the resources associated with the value.
  * Persistent
   - A value which is valid beyond the current scope
 
-::shim_val_s's will be a Local unless it was returned by
-shim_persistent_new(), in which case you'll be returned a ::shim_val_s that
+::shim_val_t's will be a Local unless it was returned by
+shim_persistent_new(), in which case you'll be returned a ::shim_val_t that
 wraps a Persistent.
 
 Wrapped Persistents should **only** be released by calling
@@ -30,7 +30,7 @@ shim_obj_make_weak().
 
 ## Arguments
 
-::shim_val_s's retrieved from:
+::shim_val_t's retrieved from:
 
  * shim_args_get()
  * shim_args_get_this()

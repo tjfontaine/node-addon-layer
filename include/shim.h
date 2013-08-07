@@ -31,60 +31,56 @@ extern "C" {
 #include "stdint.h"
 #include "node_version.h"
 
+/**
+ * \defgroup core Core types and helpers
+ * @{
+ */
+
+/** The ABI version of the addon layer */
 #define SHIM_ABI_VERSION 1
 
-/**
- * \enum shim_type
- * Defines the types natively supported by the addon layer
- */
+/** Defines the types natively supported by the addon layer */
 typedef enum shim_type {
-  SHIM_TYPE_UNKNOWN = 0, /**< Unknown type */
-  SHIM_TYPE_UNDEFINED,
-  SHIM_TYPE_NULL,
-  SHIM_TYPE_BOOL,
-  SHIM_TYPE_DATE,
-  SHIM_TYPE_ARRAY,
-  SHIM_TYPE_OBJECT,
-  SHIM_TYPE_INTEGER,
-  SHIM_TYPE_INT32,
-  SHIM_TYPE_UINT32,
-  SHIM_TYPE_NUMBER,
-  SHIM_TYPE_EXTERNAL,
-  SHIM_TYPE_FUNCTION,
-  SHIM_TYPE_STRING,
+  SHIM_TYPE_UNKNOWN = 0,  /**< Unknown type */
+  SHIM_TYPE_UNDEFINED,    /**< v8:Undefined */
+  SHIM_TYPE_NULL,         /**< v8::Null */
+  SHIM_TYPE_BOOL,         /**< `true` or `false` */
+  SHIM_TYPE_DATE,         /**< v8::Date object */
+  SHIM_TYPE_ARRAY,        /**< v8::Array object */
+  SHIM_TYPE_OBJECT,       /**< v8::Object */
+  SHIM_TYPE_INTEGER,      /**< v8::Integer */
+  SHIM_TYPE_INT32,        /**< v8::Integer::Int32 */
+  SHIM_TYPE_UINT32,       /**< v8::Integer::Uint32 */
+  SHIM_TYPE_NUMBER,       /**< v8::Number */
+  SHIM_TYPE_EXTERNAL,     /**< v8::External */
+  SHIM_TYPE_FUNCTION,     /**< v8::Function */
+  SHIM_TYPE_STRING,       /**< v8::String */
 } shim_type_t;
 
 /**
- * \struct shim_val_s
- * \brief The opaque handle that represents a javascript value
+ * The opaque handle that represents a javascript value
+ *
  * You should use shim_value_release
  */
 typedef struct shim_val_s shim_val_t;
 
-/**
- * \struct shim_ctx_s
- * \brief The opaque handle that represents the currently executing context
- */
+/** The opaque handle that represents the currently executing context */
 typedef struct shim_ctx_s shim_ctx_t;
 
-/**
- * \struct shim_args_s
- * \brief The opaque handle that represents the arguments passed to this function
- */
+/** The opaque handle that represents the arguments passed to this function */
 typedef struct shim_args_s shim_args_t;
 
-/**
- * \typedef shim_bool_t
- * \brief A wrapper for TRUE and FALSE that is merely an int
- */
+/** A wrapper for TRUE and FALSE that is merely an int */
 typedef int shim_bool_t;
 
-
+/** Entry point from node to register the addon layer */
 typedef void (* node_register_func)(void*, void*);
+/** The declaration of the addon layer entry point */
 void shim_module_initialize(void*, void*);
 
-
+/** Signature of for how a module will be initialized */
 typedef int (* register_func)(shim_ctx_t*, shim_val_t*, shim_val_t*);
+/** Location of your entry point */
 extern register_func shim_initialize;
 
 /**
@@ -114,6 +110,10 @@ struct shim_module_struct {
 #endif /* checking NODE_MODULE_VERSION defined */
 
 
+/**
+ * \def SHIM_MODULE(name, func)
+ * Use this to define the \a name and \a func entry point of your module
+ */
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
 struct shim_module_struct name ## _module = {                                 \
@@ -124,12 +124,11 @@ struct shim_module_struct name ## _module = {                                 \
   #name,                                                                      \
 };
 
-
+/** The signature of the entry point for exported functions */
 typedef int (* shim_func)(shim_ctx_t*, shim_args_t*);
 
 /**
- * \struct shim_fspec_s
- * \brief Describes a function signature
+ * Describes a function signature
  * \sa shim_obj_set_funcs()
  */
 typedef struct shim_fspec_s {
@@ -142,14 +141,20 @@ typedef struct shim_fspec_s {
 } shim_fspec_t;
 
 
+/** Define the all the properties fo the function */
 #define SHIM_FS_FULL(name, cfunc, nargs, data, flags)                         \
   { name, &cfunc, nargs, data, flags, 0 }
+/** Define only the function, args, and data */
 #define SHIM_FS_DEF(cfunc, nargs, data)                                       \
   SHIM_FS_FULL(#cfunc, cfunc, nargs, data, 0)
+/** Define just the function */
 #define SHIM_FS(cfunc)                                                        \
   SHIM_FS_DEF(cfunc, 0, NULL)
+/** Sentinel that indicates we're done defining functions */
 #define SHIM_FS_END                                                           \
   { NULL, NULL, 0, NULL, 0, 0 }
+
+/**@}*/
 
 /**
  * \defgroup primitives Primitive methods

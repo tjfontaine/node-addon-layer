@@ -497,7 +497,7 @@ shim_null()
  * \param val The given value
  * \sa [memory](md_docs_memory.html)
  *
- * Presuming the value was not allocated for ::shim_args_s or being used for
+ * Presuming the value was not allocated for ::shim_args_t or being used for
  * shim_args_set_rval() use this method to free the allocated memory
  */
 void
