@@ -400,11 +400,11 @@ void* shim_external_value(shim_ctx_t* ctx, shim_val_t* val);
  */
 
 /** Create a new error */
-shim_val_t* shim_error_new(shim_ctx_t* ctx, const char* msg);
+shim_val_t* shim_error_new(shim_ctx_t* ctx, const char* msg, ...);
 /** Create a new TypeError */
-shim_val_t* shim_error_type_new(shim_ctx_t* ctx, const char* msg);
+shim_val_t* shim_error_type_new(shim_ctx_t* ctx, const char* msg, ...);
 /** create a new RangeError */
-shim_val_t* shim_error_range_new(shim_ctx_t* ctx, const char* msg);
+shim_val_t* shim_error_range_new(shim_ctx_t* ctx, const char* msg, ...);
 
 /** Check if there is a pending exception */
 shim_bool_t shim_exception_pending(shim_ctx_t* ctx);

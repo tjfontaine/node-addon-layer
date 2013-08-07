@@ -149,26 +149,29 @@ enum shim_err_type {
   SHIM_ERR_RANGE,
 };
 
+/* TODO this doesn't belong here */
 #define SHIM_ERROR_LENGTH 512
 
-void
-shim_throw_verror(shim_ctx_t* ctx, enum shim_err_type type, const char* msg,
+Local<Value>
+shim_format_error(shim_ctx_t* ctx, enum shim_err_type type, const char* msg,
   va_list ap)
 {
   char buf[SHIM_ERROR_LENGTH];
   vsnprintf(buf, SHIM_ERROR_LENGTH, msg, ap);
   Local<String> str = String::New(buf);
+  Local<Value> err;
   switch(type) {
     case SHIM_ERR_ERROR:
-      ThrowException(Exception::Error(str));
+      err = Exception::Error(str);
       break;
     case SHIM_ERR_TYPE:
-      ThrowException(Exception::TypeError(str));
+      err = Exception::TypeError(str);
       break;
     case SHIM_ERR_RANGE:
-      ThrowException(Exception::RangeError(str));
+      err = Exception::RangeError(str);
       break;
-  } 
+  }
+  return err;
 }
 
 
@@ -724,7 +727,6 @@ shim_obj_get_prop_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
  * \return TRUE if object had the propert, otherwise FALSE
  */
 shim_bool_t
-shim_bool_t
 shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t idx,
   shim_val_t* rval)
 {
@@ -743,7 +745,6 @@ shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj, uint32_t idx,
  * \param rval The actual value returned
  * \return TRUE if object had the propert, otherwise FALSE
  */
-shim_bool_t
 shim_bool_t
 shim_obj_get_prop_sym(shim_ctx_t* ctx, shim_val_t* obj, shim_val_t* sym,
   shim_val_t* rval)
@@ -884,7 +885,7 @@ shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
   assert(self != NULL);
   Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
 
-  Local<String> str = OBJ_TO_STRING(SHIM_TO_VAL(name));
+  Local<String> str = OBJ_TO_STRING(SHIM_TO_VAL(sym));
 
   rval->handle = *shim_call_func(recv, str, argc, argv);
 
@@ -1359,34 +1360,49 @@ shim_external_value(shim_ctx_t* ctx, shim_val_t* obj)
 /**
  * \param ctx Currently executing context
  * \param msg The message to be used for error
+ * \param ... Arguments for formatting
  * \return The wrapped Error
  */
 shim_val_t*
-shim_error_new(shim_ctx_t* ctx, const char* msg)
+shim_error_new(shim_ctx_t* ctx, const char* msg, ...)
 {
-  return shim_val_alloc(ctx, Exception::Error(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  Local<Value> err = shim::shim_format_error(ctx, SHIM_ERR_ERROR, msg, ap);
+  va_end(ap);
+  return shim_val_alloc(ctx, err);
 }
 
 /**
  * \param ctx Currently executing context
  * \param msg The message to be used for error
+ * \param ... Arguments for formatting
  * \return The wrapped TypeError
  */
 shim_val_t*
-shim_error_type_new(shim_ctx_t* ctx, const char* msg)
+shim_error_type_new(shim_ctx_t* ctx, const char* msg, ...)
 {
-  return shim_val_alloc(ctx, Exception::TypeError(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  Local<Value> err = shim::shim_format_error(ctx, SHIM_ERR_TYPE, msg, ap);
+  va_end(ap);
+  return shim_val_alloc(ctx, err);
 }
 
 /**
  * \param ctx Currently executing context
  * \param msg The message to be used for error
+ * \param ... Arguments for formatting
  * \return The wrapped RangeError
  */
 shim_val_t*
-shim_error_range_new(shim_ctx_t* ctx, const char* msg)
+shim_error_range_new(shim_ctx_t* ctx, const char* msg, ...)
 {
-  return shim_val_alloc(ctx, Exception::RangeError(String::New(msg)));
+  va_list ap;
+  va_start(ap, msg);
+  Local<Value> err = shim::shim_format_error(ctx, SHIM_ERR_RANGE, msg, ap);
+  va_end(ap);
+  return shim_val_alloc(ctx, err);
 }
 
 /**
@@ -1436,39 +1452,42 @@ shim_exception_clear(shim_ctx_t* ctx)
 /**
  * \param ctx Currently executing context
  * \param msg The message to set as the pending exception
+ * \param ... Arguments for formatting
  */
 void
 shim_throw_error(shim_ctx_t* ctx, const char* msg, ...)
 {
   va_list ap;
   va_start(ap, msg);
-  shim::shim_throw_verror(ctx, SHIM_ERR_ERROR, msg, ap);
+  ThrowException(shim::shim_format_error(ctx, SHIM_ERR_ERROR, msg, ap));
   va_end(ap);
 }
 
 /**
  * \param ctx Currently executing context
  * \param msg The message to set as the pending exception
+ * \param ... Arguments for formatting
  */
 void
 shim_throw_type_error(shim_ctx_t* ctx, const char* msg, ...)
 {
   va_list ap;
   va_start(ap, msg);
-  shim::shim_throw_verror(ctx, SHIM_ERR_TYPE, msg, ap);
+  ThrowException(shim::shim_format_error(ctx, SHIM_ERR_TYPE, msg, ap));
   va_end(ap);
 }
 
 /**
  * \param ctx Currently executing context
  * \param msg The message to set as the pending exception
+ * \param ... Arguments for formatting
  */
 void
 shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...)
 {
   va_list ap;
   va_start(ap, msg);
-  shim::shim_throw_verror(ctx, SHIM_ERR_RANGE, msg, ap);
+  ThrowException(shim::shim_format_error(ctx, SHIM_ERR_RANGE, msg, ap));
   va_end(ap);
 }
 
@@ -1566,7 +1585,7 @@ shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type, ...)
   {
     void* rval = va_arg(ap, void*);
 
-    if(!shim_unpack_one(ctx, args, cur, ctype, rval)) {
+    if(!shim::shim_unpack_one(ctx, args, cur, ctype, rval)) {
       /* TODO this should use a type string */
       shim::shim_throw_type_error(ctx, "Argument %d not of type %s", cur,
         shim_type_str(ctype));
