@@ -85,12 +85,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:gad9413af53ada9649dba79d3e420fc8bf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#gad9413af53ada9649dba79d3e420fc8bf">shim_error_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg)</td></tr>
-<tr class="separator:gad9413af53ada9649dba79d3e420fc8bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4e5b9e69975582c8884fb725157736df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga4e5b9e69975582c8884fb725157736df">shim_error_type_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg)</td></tr>
-<tr class="separator:ga4e5b9e69975582c8884fb725157736df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5935901612dae8e831327901bd90923c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga5935901612dae8e831327901bd90923c">shim_error_range_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg)</td></tr>
-<tr class="separator:ga5935901612dae8e831327901bd90923c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga533f15e3f6fed068218ef9f5415c1c24"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga533f15e3f6fed068218ef9f5415c1c24">shim_error_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg,...)</td></tr>
+<tr class="separator:ga533f15e3f6fed068218ef9f5415c1c24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa12efdd6f41f100928c942d24fdae6c4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#gaa12efdd6f41f100928c942d24fdae6c4">shim_error_type_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg,...)</td></tr>
+<tr class="separator:gaa12efdd6f41f100928c942d24fdae6c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga67781836bc1cb5365f94bf8f139da9d3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structshim__val__s.html">shim_val_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga67781836bc1cb5365f94bf8f139da9d3">shim_error_range_new</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx, const char *msg,...)</td></tr>
+<tr class="separator:ga67781836bc1cb5365f94bf8f139da9d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7e0bab363d01d80773a5eb69a95da36e"><td class="memItemLeft" align="right" valign="top">shim_bool_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga7e0bab363d01d80773a5eb69a95da36e">shim_exception_pending</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx)</td></tr>
 <tr class="separator:ga7e0bab363d01d80773a5eb69a95da36e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7598207f7230b55d8572b1dcc6624576"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errors.html#ga7598207f7230b55d8572b1dcc6624576">shim_exception_clear</a> (<a class="el" href="structshim__ctx__s.html">shim_ctx_t</a> *ctx)</td></tr>
@@ -109,7 +109,7 @@ Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Methods for errors </p>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="gad9413af53ada9649dba79d3e420fc8bf"></a>
+<a class="anchor" id="ga533f15e3f6fed068218ef9f5415c1c24"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -123,7 +123,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>msg</em>&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -137,6 +143,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to be used for error </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -144,7 +151,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga5935901612dae8e831327901bd90923c"></a>
+<a class="anchor" id="ga67781836bc1cb5365f94bf8f139da9d3"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -158,7 +165,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>msg</em>&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -172,6 +185,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to be used for error </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -179,7 +193,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga4e5b9e69975582c8884fb725157736df"></a>
+<a class="anchor" id="gaa12efdd6f41f100928c942d24fdae6c4"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -193,7 +207,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>msg</em>&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>...</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -207,6 +227,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to be used for error </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -364,6 +385,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to set as the pending exception </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -404,6 +426,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to set as the pending exception </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -444,6 +467,7 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">ctx</td><td>Currently executing context </td></tr>
     <tr><td class="paramname">msg</td><td>The message to set as the pending exception </td></tr>
+    <tr><td class="paramname">...</td><td>Arguments for formatting </td></tr>
   </table>
   </dd>
 </dl>
@@ -453,7 +477,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Aug 4 2013 14:41:30 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 7 2013 10:41:58 for node-addon-layer by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 </small></address>
