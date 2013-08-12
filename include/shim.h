@@ -97,13 +97,15 @@ struct shim_module_struct {
 
 
 /* Sigh, NODE_MODULE_VERSION isn't in node_version.h before 0.12 */
-#ifndef NODE_MODULE_VERSION
+#if defined(NODE_MODULE_VERSION)
+# define SHIM_NODE_ABI NODE_MODULE_VERSION
+#else
 # if NODE_VERSION_AT_LEAST(0, 11, 0)
-#   define NODE_MODULE_VERSION 0x000C
+#   define SHIM_NODE_ABI 0x000C
 # elif NODE_VERSION_AT_LEAST(0, 10, 0)
-#   define NODE_MODULE_VERSION 0x000B
+#   define SHIM_NODE_ABI 0x000B
 # elif NODE_VERSION_AT_LEAST(0, 8, 0)
-#   define NODE_MODULE_VERSION 1
+#   define SHIM_NODE_ABI 1
 # else
 #   error "The shim requires at least node v0.8.0"
 # endif /* checking versions */
@@ -117,7 +119,7 @@ struct shim_module_struct {
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
 struct shim_module_struct name ## _module = {                                 \
-  NODE_MODULE_VERSION,                                                        \
+  SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
   (node_register_func)&shim_module_initialize,                                \
