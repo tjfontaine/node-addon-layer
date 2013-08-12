@@ -197,6 +197,12 @@ shim_call_func(Local<Object> recv, Local<String> str, size_t argc,
 }
 
 
+struct shim_fholder_s {
+  shim_func cfunc;
+  void* data;
+};
+
+
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 void
 Static(const FunctionCallbackInfo<Value>& args)
@@ -212,13 +218,15 @@ Static(const Arguments& args)
   assert(data->IsExternal());
 
   Local<External> ext = data.As<External>();
-  shim_func cfunc = reinterpret_cast<shim_func>(ext->Value());
+  shim_fholder_s* holder = reinterpret_cast<shim_fholder_s*>(ext->Value());
+  shim_func cfunc = holder->cfunc;
 
   shim_args_t sargs;
   sargs.argc = args.Length();
   sargs.argv = NULL;
   sargs.ret = shim_undefined();
   sargs.self = shim_val_alloc(&ctx, args.This());
+  sargs.data = holder->data;
 
   size_t argv_len = sizeof(shim_val_t*) * sargs.argc;
 
@@ -862,7 +870,12 @@ shim_val_t*
 shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc, int32_t flags,
   const char* name, void* hint)
 {
-  Local<External> ext = External::New(reinterpret_cast<void*>(cfunc));
+  shim_fholder_s* holder = new shim_fholder_s;
+  holder->cfunc = cfunc;
+  holder->data = hint;
+
+  Local<External> ext = External::New(reinterpret_cast<void*>(holder));
+
   Local<FunctionTemplate> ft = FunctionTemplate::New(shim::Static, ext);
   Local<Function> fh = ft->GetFunction();
   fh->SetName(String::NewSymbol(name));
@@ -1659,8 +1672,7 @@ shim_args_get_this(shim_ctx_t* ctx, shim_args_t* args)
 void*
 shim_args_get_data(shim_ctx_t* ctx, shim_args_t* args)
 {
-  /* TODO */
-  return NULL;
+  return args->data;
 }
 
 

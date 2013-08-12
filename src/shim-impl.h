@@ -34,6 +34,7 @@ struct shim_val_s {
   enum shim_type type;
 };
 
+
 struct shim_ctx_s {
   void* scope;
   void* isolate;
@@ -41,18 +42,22 @@ struct shim_ctx_s {
   void* allocs;
 };
 
+
 struct shim_args_s {
   size_t argc;
   shim_val_t *self;
   shim_val_t **argv;
   shim_val_t *ret;
+  void* data;
 };
+
 
 struct shim_work_s {
   shim_work_cb work_cb;
   shim_after_work after_cb;
   void* hint;
 };
+
 
 extern shim_val_t* shim__undefined;
 extern shim_val_t* shim__null;
@@ -62,6 +67,7 @@ typedef struct weak_baton_s {
   shim_weak_cb weak_cb;
   void* data;
 } weak_baton_t;
+
 
 #ifdef __cplusplus
 }
