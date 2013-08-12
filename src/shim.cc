@@ -82,6 +82,11 @@ do {} while(0)
 
 #define VAL_DEFINE(var, obj) Local<Value> var(SHIM_TO_VAL(obj))
 
+#if 0
+#define SHIM_DEBUG(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define SHIM_DEBUG(...)
+#endif
 
 Persistent<String> hidden_private;
 
@@ -211,6 +216,8 @@ Handle<Value>
 Static(const Arguments& args)
 #endif
 {
+  String::Utf8Value fname(args.Callee()->GetName());
+  SHIM_DEBUG("SHIM ENTER %s\n", *fname);
   SHIM_PROLOGUE(ctx);
 
   Local<Value> data = args.Data();
@@ -239,9 +246,12 @@ Static(const Arguments& args)
     sargs.argv[i] = shim_val_alloc(&ctx, args[i]);
   }
 
+  SHIM_DEBUG("SHIM CALL %s\n", *fname);
   if(!cfunc(&ctx, &sargs)) {
+    SHIM_DEBUG("SHIM ERROR %s\n", *fname);
     /* the function failed do we need to do any more checking of exceptions? */
   }
+  SHIM_DEBUG("SHIM EXIT %s\n", *fname);
 
   Value* ret = NULL;
 
@@ -275,9 +285,12 @@ Static(const Arguments& args)
   shim_context_cleanup(&ctx);
 
   /* TODO sometimes things don't always propogate? */
-  if (ctx_trycatch.HasCaught())
+  if (ctx_trycatch.HasCaught()) {
+    SHIM_DEBUG("SHIM THREW %s\n", *fname);
     ctx_trycatch.ReThrow();
+  }
 
+  SHIM_DEBUG("SHIM LEAVING %s\n", *fname);
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   if (!ctx_trycatch.HasCaught())
     args.GetReturnValue().Set(Local<Value>(ret));
@@ -1356,7 +1369,15 @@ shim_buffer_length(shim_val_t* val)
 shim_val_t*
 shim_external_new(shim_ctx_t* ctx, void* data)
 {
-  return shim_val_alloc(ctx, External::New(data));
+  Local<Value> e;
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  e = External::New(data);
+#else
+  e = External::Wrap(data);
+#endif
+
+  return shim_val_alloc(ctx, e);
 }
 
 /**
@@ -1367,7 +1388,16 @@ shim_external_new(shim_ctx_t* ctx, void* data)
 void*
 shim_external_value(shim_ctx_t* ctx, shim_val_t* obj)
 {
-  return SHIM_TO_VAL(obj).As<External>()->Value();
+  void* ret;
+  Local<External> e = SHIM_TO_VAL(obj).As<External>();
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  ret = e->Value();
+#else
+  ret = External::Unwrap(e);
+#endif
+
+  return ret;
 }
 
 /**
