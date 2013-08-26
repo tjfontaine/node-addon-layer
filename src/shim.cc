@@ -395,6 +395,9 @@ shim_value_is(shim_val_t* val, shim_type_t type)
     case SHIM_TYPE_FUNCTION:
       ret = obj->IsFunction();
       break;
+    case SHIM_TYPE_BUFFER:
+      ret = Buffer::HasInstance(obj);
+      break;
     case SHIM_TYPE_UNKNOWN:
     default:
       ret = FALSE;
@@ -1569,6 +1572,9 @@ shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
     case SHIM_TYPE_EXTERNAL:
       *(void**)rval = shim::shim_external_value(ctx, arg);
       break;
+    case SHIM_TYPE_BUFFER:
+      *(char**)rval = shim::shim_buffer_value(arg);
+      break;
     case SHIM_TYPE_STRING:
       vrval->handle = *OBJ_TO_STRING(val);
       break;
@@ -1775,6 +1781,7 @@ shim_type_str(shim_type_t type)
     SHIM_ITEM(SHIM_TYPE_EXTERNAL)
     SHIM_ITEM(SHIM_TYPE_FUNCTION)
     SHIM_ITEM(SHIM_TYPE_STRING)
+    SHIM_ITEM(SHIM_TYPE_BUFFER)
 #undef SHIM_ITEM
   }
 }

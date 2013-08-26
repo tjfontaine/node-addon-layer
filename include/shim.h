@@ -55,6 +55,7 @@ typedef enum shim_type {
   SHIM_TYPE_EXTERNAL,     /**< v8::External */
   SHIM_TYPE_FUNCTION,     /**< v8::Function */
   SHIM_TYPE_STRING,       /**< v8::String */
+  SHIM_TYPE_BUFFER,       /**< node::Buffer */
 } shim_type_t;
 
 /**
