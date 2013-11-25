@@ -288,6 +288,11 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     SHIM_DEBUG("SHIM THREW %s\n", *fname);
     ctx_trycatch.ReThrow();
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+    return;
+#else
+    return Undefined();
+#endif
   }
 
   SHIM_DEBUG("SHIM LEAVING %s\n", *fname);
