@@ -68,9 +68,12 @@ using v8::Value;
 
 
 #define SHIM_PROLOGUE(ctx)                                                    \
-  Isolate* ctx ## _isolate = Isolate::GetCurrent();                           \
   HandleScope ctx ## _scope;                                                  \
   TryCatch ctx ## _trycatch;                                                  \
+do {} while(0)
+
+#define SHIM_CTX(ctx)                                                         \
+  Isolate* ctx ## _isolate = Isolate::GetCurrent();                           \
   shim_ctx_t ctx;                                                             \
   ctx.isolate = static_cast<void*>(ctx ## _isolate);                          \
   ctx.scope = static_cast<void*>(&ctx ## _scope);                             \
@@ -219,6 +222,7 @@ Static(const Arguments& args)
   String::Utf8Value fname(args.Callee()->GetName());
   SHIM_DEBUG("SHIM ENTER %s\n", *fname);
   SHIM_PROLOGUE(ctx);
+  SHIM_CTX(ctx);
 
   Local<Value> data = args.Data();
 
@@ -308,12 +312,10 @@ Static(const Arguments& args)
 #endif
 }
 
-extern "C"
-{
-
-void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
+void shim_module_initialize_cpp(Handle<Object> exports, Handle<Value> module)
 {
   SHIM_PROLOGUE(ctx);
+  SHIM_CTX(ctx);
 
   if (hidden_private.IsEmpty()) {
     Handle<String> str = String::NewSymbol("shim_private");
@@ -337,6 +339,11 @@ void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 
   shim_context_cleanup(&ctx);
 }
+extern "C"
+{
+
+void (*shim_module_initialize)(void *, void*) =
+    (void (*)(void *, void *))shim_module_initialize_cpp;
 
 
 /* TODO abstract out so we don't need multiple temporaries */
@@ -1735,6 +1742,7 @@ before_after(uv_work_t* req)
   int status = 0;
 #endif
   SHIM_PROLOGUE(ctx);
+  SHIM_CTX(ctx);
   shim_work_t* work = static_cast<shim_work_t*>(req->data);
   work->after_cb(&ctx, work, status, work->hint);
   shim_context_cleanup(&ctx);
@@ -1789,6 +1797,8 @@ shim_type_str(shim_type_t type)
     SHIM_ITEM(SHIM_TYPE_BUFFER)
 #undef SHIM_ITEM
   }
+
+  return ("INVALID_TYPE");
 }
 
 
