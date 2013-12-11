@@ -24,6 +24,7 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <dlfcn.h>
 
 #include "shim.h"
 #include "uv.h"
@@ -312,7 +313,11 @@ Static(const Arguments& args)
 #endif
 }
 
-void shim_module_initialize_cpp(Handle<Object> exports, Handle<Value> module)
+extern "C"
+{
+extern const char *shim_modname;
+
+void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 {
   SHIM_PROLOGUE(ctx);
   SHIM_CTX(ctx);
@@ -339,12 +344,6 @@ void shim_module_initialize_cpp(Handle<Object> exports, Handle<Value> module)
 
   shim_context_cleanup(&ctx);
 }
-extern "C"
-{
-
-void (*shim_module_initialize)(void *, void*) =
-    (void (*)(void *, void *))shim_module_initialize_cpp;
-
 
 /* TODO abstract out so we don't need multiple temporaries */
 
@@ -1801,7 +1800,16 @@ shim_type_str(shim_type_t type)
   return ("INVALID_TYPE");
 }
 
+__attribute__((constructor)) void shim_module_preinit(void)
+{
+	struct shim_module_struct *module;
+	char namebuf[256];
 
+	(void) snprintf(namebuf, sizeof (namebuf), "%s_module", shim_modname);
+	module = (struct shim_module_struct *)dlsym(RTLD_SELF, namebuf);
+	module->func = (node_register_func)shim_module_initialize;
 }
 
-}
+} /* end extern "C" */
+
+} /* end namespace */
