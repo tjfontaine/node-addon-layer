@@ -76,8 +76,6 @@ typedef int shim_bool_t;
 
 /** Entry point from node to register the addon layer */
 typedef void (* node_register_func)(void*, void*);
-/** The declaration of the addon layer entry point */
-void shim_module_initialize(void*, void*);
 
 /** Signature of for how a module will be initialized */
 typedef int (* register_func)(shim_ctx_t*, shim_val_t*, shim_val_t*);
@@ -123,9 +121,10 @@ struct shim_module_struct name ## _module = {                                 \
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  (node_register_func)&shim_module_initialize,                                \
+  NULL,									      \
   #name,                                                                      \
-};
+};									      \
+const char* shim_modname = # name ;
 
 /** The signature of the entry point for exported functions */
 typedef int (* shim_func)(shim_ctx_t*, shim_args_t*);
