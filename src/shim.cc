@@ -1588,13 +1588,17 @@ shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg, shim_type_t type,
       break;
     case SHIM_TYPE_STRING:
       vrval->handle = *OBJ_TO_STRING(val);
+      vrval->type = SHIM_TYPE_STRING;
+      break;
+    case SHIM_TYPE_FUNCTION:
+      vrval->handle = *val;
+      vrval->type = SHIM_TYPE_FUNCTION;
       break;
     case SHIM_TYPE_UNDEFINED:
     case SHIM_TYPE_NULL:
     case SHIM_TYPE_DATE:
     case SHIM_TYPE_ARRAY:
     case SHIM_TYPE_OBJECT:
-    case SHIM_TYPE_FUNCTION:
     default:
       return FALSE;
       break;
