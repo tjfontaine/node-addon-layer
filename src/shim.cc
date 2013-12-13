@@ -941,8 +941,9 @@ shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
   Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
 
   Local<String> str = OBJ_TO_STRING(SHIM_TO_VAL(sym));
-
-  rval->handle = *shim_call_func(recv, str, argc, argv);
+  Handle<Value> ret = shim_call_func(recv, str, argc, argv);
+  if (rval != NULL)
+          rval->handle = *ret;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
@@ -964,8 +965,10 @@ shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self, const char* name,
   assert(self != NULL);
   Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
 
-  rval->handle = *shim_call_func(recv, String::NewSymbol(name), argc, argv);
-  
+  Handle<Value> ret = shim_call_func(recv, String::NewSymbol(name), argc, argv);
+  if (rval != NULL)
+          rval->handle = *ret;
+
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
 }
@@ -994,7 +997,9 @@ shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* func,
   else
     recv = Object::New();
 
-  rval->handle = *shim_call_func(recv, fn, argc, argv);
+  Handle<Value> ret = shim_call_func(recv, fn, argc, argv);
+  if (rval != NULL)
+          rval->handle = *ret;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
@@ -1020,7 +1025,9 @@ shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* sym,
 
   Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
 
-  rval->handle = *node::MakeCallback(recv, jsym, argc, jsargs);
+  Handle<Value> ret = node::MakeCallback(recv, jsym, argc, jsargs);
+  if (rval != NULL)
+          rval->handle = *ret;
 
   delete jsargs;
 
@@ -1055,8 +1062,8 @@ shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self, shim_val_t* fval,
   }
 
   Handle<Value> ret = node::MakeCallback(recv, fn, argc, jsargs);
-
-  rval->handle = *ret;
+  if (rval != NULL)
+          rval->handle = *ret;
 
   delete jsargs;
 
@@ -1083,8 +1090,8 @@ shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj, const char* name,
   Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
 
   Handle<Value> ret = node::MakeCallback(recv, name, argc, jsargs);
-
-  rval->handle = *ret;
+  if (rval != NULL)
+          rval->handle = *ret;
 
   delete jsargs;
 
