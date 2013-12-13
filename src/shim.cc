@@ -24,6 +24,8 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+
+#include <strings.h>
 #include <dlfcn.h>
 
 #include "shim.h"
@@ -526,6 +528,19 @@ shim_val_t*
 shim_null()
 {
   return &shim__null;
+}
+
+/**
+ * \sa [memory](md_docs_memory.html)
+ *
+ * Allocate memory to hold an arbitrary handle.
+ */
+shim_val_t*
+shim_value_alloc(void)
+{
+	shim_val_t *val = (shim_val_t *)malloc(sizeof (shim_val_t));
+	bzero(val, sizeof (*val));
+	return (val);
 }
 
 /**
