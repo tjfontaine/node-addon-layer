@@ -172,7 +172,9 @@ shim_bool_t shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
   shim_val_t* rval);
 
 
-/** Relase memory associated with this value */
+/** Allocate memory to hold an arbitrary value. */
+shim_val_t *shim_value_alloc(void);
+/** Release memory associated with this value */
 void shim_value_release(shim_val_t* val);
 
 /** Get the undefined value */
