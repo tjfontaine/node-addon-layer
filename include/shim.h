@@ -30,6 +30,7 @@ extern "C" {
 
 #include "stdint.h"
 #include "node_version.h"
+#include <stddef.h>
 
 /**
  * \defgroup core Core types and helpers
