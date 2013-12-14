@@ -1231,7 +1231,7 @@ shim_string_length_utf8(shim_val_t* val)
  *
  * The caller is responsible for free'ing this memory
  */
-const char*
+char*
 shim_string_value(shim_val_t* val)
 {
   String::Utf8Value str(OBJ_TO_STRING(SHIM_TO_VAL(val)));

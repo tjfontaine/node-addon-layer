@@ -342,7 +342,7 @@ size_t shim_string_length(shim_val_t* val);
 size_t shim_string_length_utf8(shim_val_t* val);
 
 /** Get the value of the string */
-const char* shim_string_value(shim_val_t* val);
+char* shim_string_value(shim_val_t* val);
 /* TODO enum for options */
 /** Write the value of the string to a buffer */
 size_t shim_string_write_ascii(shim_val_t* val, char* buff, size_t start,
