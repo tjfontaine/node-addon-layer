@@ -30,8 +30,17 @@
 #include "node.h"
 #include "node_buffer.h"
 
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+#define SHIM__HANDLE_TYPE v8::Local<v8::Value>
+#define SHIM__TO_LOCAL(x) (x)
+#else
+#define SHIM__HANDLE_TYPE v8::Handle<v8::Value>
+#define SHIM__TO_LOCAL(x) v8::Local<v8::Value>::New(x)
+#endif
+
 struct shim_val_s {
-  v8::Local<v8::Value> handle;
+  SHIM__HANDLE_TYPE handle;
   enum shim_type type;
 };
 
