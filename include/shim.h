@@ -65,6 +65,7 @@ typedef enum shim_type {
  * You should use shim_value_release
  */
 typedef struct shim_val_s shim_val_t;
+typedef struct shim_persistent_s shim_persistent_t;
 
 /** The opaque handle that represents the currently executing context */
 typedef struct shim_ctx_s shim_ctx_t;
@@ -248,18 +249,21 @@ shim_bool_t shim_obj_get_private(shim_ctx_t* ctx, shim_val_t* obj, void** data);
  */
 
 /** Make an existing value persistent */
-shim_val_t* shim_persistent_new(shim_ctx_t* ctx, shim_val_t* val);
+shim_persistent_t* shim_persistent_new(shim_ctx_t* ctx, shim_val_t* val);
 /** Dispose a perisstent value */
-void shim_persistent_dispose(shim_val_t* val);
+void shim_persistent_dispose(shim_persistent_t* val);
+
+shim_bool_t shim_persistent_to_val(shim_ctx_t* ctx, shim_persistent_t* pval,
+  shim_val_t** val);
 
 
 /** Callback fired when a peristent is about to be collected  */
-typedef void (* shim_weak_cb)(shim_val_t*, void*);
+typedef void (* shim_weak_cb)(shim_persistent_t*, void*);
 /** Make a persistent value weak */
-void shim_obj_make_weak(shim_ctx_t* ctx, shim_val_t* val, void* data,
+void shim_obj_make_weak(shim_ctx_t* ctx, shim_persistent_t* val, void* data,
   shim_weak_cb cb);
 /** Make a persistent object strong */
-void shim_obj_clear_weak(shim_val_t* val);
+void shim_obj_clear_weak(shim_persistent_t* val);
 
 /**@}*/
 

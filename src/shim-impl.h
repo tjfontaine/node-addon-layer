@@ -24,10 +24,16 @@
 #ifndef NODE_SHIM_IMPL_H
 #define NODE_SHIM_IMPL_H
 
-#ifdef __cplusplus
-extern "C" {
+#include "shim.h"
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+#define V8_USE_UNSAFE_HANDLES 1
+#define V8_ALLOW_ACCESS_TO_RAW_HANDLE_CONSTRUCTOR 1
 #endif
 
+#include "v8.h"
+#include "node.h"
+#include "node_buffer.h"
 
 struct shim_val_s {
   void* handle;
@@ -35,9 +41,14 @@ struct shim_val_s {
 };
 
 
+struct shim_persistent_s {
+  v8::Persistent<v8::Value> handle;
+};
+
+
 struct shim_ctx_s {
   void* scope;
-  void* isolate;
+  v8::Isolate* isolate;
   void* trycatch;
   void* allocs;
 };
@@ -45,9 +56,9 @@ struct shim_ctx_s {
 
 struct shim_args_s {
   size_t argc;
-  shim_val_t *self;
-  shim_val_t **argv;
-  shim_val_t *ret;
+  shim_val_s *self;
+  shim_val_s **argv;
+  shim_val_s *ret;
   void* data;
 };
 
@@ -59,18 +70,13 @@ struct shim_work_s {
 };
 
 
-extern shim_val_t* shim__undefined;
-extern shim_val_t* shim__null;
+extern shim_val_s shim__undefined;
+extern shim_val_s shim__null;
 
 
 typedef struct weak_baton_s {
   shim_weak_cb weak_cb;
   void* data;
 } weak_baton_t;
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
