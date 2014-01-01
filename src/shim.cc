@@ -314,6 +314,7 @@ Static(const Arguments& args)
 #endif
 }
 
+#if NODE_VERSION_AT_LEAST(0, 11, 9)
 template <class TypeName>
 inline v8::Local<TypeName> StrongPersistentToLocal(
     const v8::Persistent<TypeName>& persistent) {
@@ -338,6 +339,7 @@ inline v8::Local<TypeName> PersistentToLocal(
     return StrongPersistentToLocal(persistent);
   }
 }
+#endif
 
 extern "C"
 {
@@ -749,13 +751,12 @@ shim_bool_t
 shim_obj_set_private(shim_ctx_s* ctx, shim_val_s* obj, void* data)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  Local<String> hp;
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
-  hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
-#else
-  hp = hidden_private;
-#endif
+  Local<String> hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
   return jsobj->SetHiddenValue(hp, External::New(data));
+#else
+  return jsobj->SetHiddenValue(hidden_private, External::New(data));
+#endif
 }
 
 /**
@@ -851,13 +852,12 @@ shim_bool_t
 shim_obj_get_private(shim_ctx_s* ctx, shim_val_s* obj, void** data)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  Local<String> hp;
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
-  hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
-#else
-  hp = hidden_private;
-#endif
+  Local<String> hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
   Local<Value> ext = jsobj->GetHiddenValue(hp);
+#else
+  Local<Value> ext = jsobj->GetHiddenValue(hidden_private);
+#endif
   *data = ext.As<External>()->Value();
   return TRUE;
 }
@@ -894,7 +894,11 @@ shim_persistent_dispose(shim_persistent_s* val)
 shim_bool_t
 shim_persistent_to_val(shim_ctx_s* ctx, shim_persistent_s* pval, shim_val_s** val)
 {
+#if NODE_VERSION_AT_LEAST(0, 11, 9)
   *val = shim_val_alloc(ctx, PersistentToLocal(ctx->isolate, pval->handle));
+#else
+  *val = shim_val_alloc(ctx, pval->handle);
+#endif
   return TRUE;
 }
 
@@ -903,12 +907,12 @@ void
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 common_weak_cb(Isolate* iso, Persistent<Value>* pobj, weak_baton_t* baton)
 {
+  SHIM_PROLOGUE(ctx);
 #else
 common_weak_cb(Persistent<Value> obj, void* data)
 {
   weak_baton_t* baton = static_cast<weak_baton_t*>(data);
 #endif
-  SHIM_PROLOGUE(ctx);
 
   shim_persistent_s* tmp = static_cast<shim_persistent_s*>(malloc(sizeof(shim_persistent_s)));
 
