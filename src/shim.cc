@@ -78,16 +78,12 @@ do {} while(0)
 #define SHIM_CTX(ctx)                                                         \
   shim_ctx_s ctx;                                                             \
   ctx.isolate = ctx ## _isolate;                                              \
-  ctx.scope = static_cast<void*>(&ctx ## _scope);                             \
-  ctx.trycatch = static_cast<void*>(&ctx ## _trycatch);                       \
+  ctx.scope = &ctx ## _scope;                                                 \
+  ctx.trycatch = &ctx ## _trycatch;                                           \
 do {} while(0)
 
 
-#define SHIM_TO_VAL(obj) Local<Value>(static_cast<Value*>((obj)->handle))
-
-#define VAL_DEFINE(var, obj) Local<Value> var(SHIM_TO_VAL(obj))
-
-#if 0
+#if 1
 #define SHIM_DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define SHIM_DEBUG(...)
@@ -95,15 +91,8 @@ do {} while(0)
 
 Persistent<String> hidden_private;
 
-shim_val_s shim__undefined = {
-  NULL,
-  SHIM_TYPE_UNDEFINED,
-};
-
-shim_val_s shim__null = {
-  NULL,
-  SHIM_TYPE_NULL,
-};
+shim_val_s shim__undefined;
+shim_val_s shim__null;
 
 void
 shim_context_cleanup(shim_ctx_s* ctx)
@@ -112,11 +101,11 @@ shim_context_cleanup(shim_ctx_s* ctx)
 
 
 shim_val_s*
-shim_val_alloc(shim_ctx_s* ctx, Handle<Value> val,
+shim_val_alloc(shim_ctx_s* ctx, Local<Value> val,
   shim_type_t type = SHIM_TYPE_UNKNOWN)
 {
   shim_val_s* obj = static_cast<shim_val_s*>(malloc(sizeof(shim_val_s)));
-  obj->handle = *val;
+  obj->handle = val;
   obj->type = type;
   return obj;
 }
@@ -128,7 +117,7 @@ shim_vals_to_handles(size_t argc, shim_val_s** argv)
 
   for (size_t i = 0; i < argc; i++) {
     if (argv[i] == NULL) {
-      jsargs[i] = *Null();
+      jsargs[i] = Null();
       continue;
     }
 
@@ -136,13 +125,13 @@ shim_vals_to_handles(size_t argc, shim_val_s** argv)
 
     switch(argv[i]->type) {
       case SHIM_TYPE_UNDEFINED:
-        tmp = *Undefined();
+        tmp = Undefined();
         break;
       case SHIM_TYPE_NULL:
-        tmp = *Null();
+        tmp = Null();
         break;
       default:
-        tmp = SHIM_TO_VAL(argv[i]);
+        tmp = argv[i]->handle;
         break;
     }
 
@@ -259,25 +248,23 @@ Static(const Arguments& args)
   }
   SHIM_DEBUG("SHIM EXIT %s\n", *fname);
 
-  Value* ret = NULL;
+  Handle<Value> ret;
 
   if(sargs.ret != NULL) {
     switch(sargs.ret->type) {
       case SHIM_TYPE_UNDEFINED:
-        ret = *Undefined();
+        ret = Undefined();
         break;
       case SHIM_TYPE_NULL:
-        ret = *Null();
+        ret = Null();
         break;
       default:
-        ret = static_cast<Value*>(sargs.ret->handle);
+        ret = sargs.ret->handle;
         break;
     }
   } else {
-    ret = *Null();
+    ret = Null();
   }
-
-  assert(ret != NULL);
 
   for (i = 0; i < sargs.argc; i++) {
     shim_value_release(sargs.argv[i]);
@@ -309,7 +296,7 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
   } else {
-    return ctx_scope.Close(Local<Value>(ret));
+    return ctx_scope.Close(Handle<Value>(ret));
   }
 #endif
 }
@@ -360,10 +347,15 @@ void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
   }
 
   shim_val_s sexport;
-  sexport.handle = *exports;
-
   shim_val_s smodule;
-  smodule.handle = *module;
+
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
+  sexport.handle = Local<Value>::New(ctx.isolate, exports);
+  smodule.handle = Local<Value>::New(ctx.isolate, module);
+#else
+  sexport.handle = Local<Value>::New(exports);
+  smodule.handle = Local<Value>::New(module);
+#endif
 
   if (!shim_initialize(&ctx, &sexport, &smodule)) {
     if (!ctx_trycatch.HasCaught())
@@ -389,7 +381,8 @@ shim_value_is(shim_val_s* val, shim_type_t type)
   if (val->type == type)
     return TRUE;
 
-  VAL_DEFINE(obj, val);
+  Local<Value> obj(val->handle);
+
   shim_bool_t ret = FALSE;
 
   switch (type)
@@ -494,45 +487,45 @@ shim_value_to(shim_ctx_s* ctx, shim_val_s* val, shim_type_t type,
     return TRUE;
   }
 
-  VAL_DEFINE(obj, val);
+  Local<Value> obj(val->handle);
 
   switch (type) {
     case SHIM_TYPE_UNDEFINED:
-      rval->handle = *Undefined();
+      rval->handle = Undefined();
       break;
     case SHIM_TYPE_NULL:
-      rval->handle = *Null();
+      rval->handle = Null();
       break;
     case SHIM_TYPE_BOOL:
-      rval->handle = *obj->ToBoolean();
+      rval->handle = obj->ToBoolean();
       break;
     case SHIM_TYPE_ARRAY:
-      rval->handle = *OBJ_TO_ARRAY(obj);
+      rval->handle = OBJ_TO_ARRAY(obj);
       break;
     case SHIM_TYPE_OBJECT:
-      rval->handle = *OBJ_TO_OBJECT(obj);
+      rval->handle = OBJ_TO_OBJECT(obj);
       break;
     case SHIM_TYPE_INTEGER:
       /* TODO */
-      rval->handle = *OBJ_TO_NUMBER(obj);
+      rval->handle = OBJ_TO_NUMBER(obj);
       break;
     case SHIM_TYPE_INT32:
-      rval->handle = *OBJ_TO_INT32(obj);
+      rval->handle = OBJ_TO_INT32(obj);
       break;
     case SHIM_TYPE_UINT32:
-      rval->handle = *OBJ_TO_UINT32(obj);
+      rval->handle = OBJ_TO_UINT32(obj);
       break;
     case SHIM_TYPE_NUMBER:
-      rval->handle = *OBJ_TO_NUMBER(obj);
+      rval->handle = OBJ_TO_NUMBER(obj);
       break;
     case SHIM_TYPE_EXTERNAL:
-      rval->handle = *OBJ_TO_EXTERNAL(obj);
+      rval->handle = OBJ_TO_EXTERNAL(obj);
       break;
     case SHIM_TYPE_FUNCTION:
-      rval->handle = *OBJ_TO_FUNCTION(obj);
+      rval->handle = OBJ_TO_FUNCTION(obj);
       break;
     case SHIM_TYPE_STRING:
-      rval->handle = *OBJ_TO_STRING(obj);
+      rval->handle = OBJ_TO_STRING(obj);
     case SHIM_TYPE_UNKNOWN:
     default:
       return FALSE;
@@ -598,10 +591,8 @@ shim_obj_new(shim_ctx_s* ctx, shim_val_s* klass, shim_val_s* proto)
   /* TODO if klass != NULL we should FunctionTemplate::New() */
   Local<Object> obj = Object::New();
 
-  if (proto != NULL) {
-    VAL_DEFINE(jsproto, proto);
-    obj->SetPrototype(jsproto->ToObject());
-  }
+  if (proto != NULL)
+    obj->SetPrototype(proto->handle->ToObject());
 
   return shim_val_alloc(ctx, obj);
 }
@@ -635,9 +626,9 @@ shim_val_s*
 shim_obj_clone(shim_ctx_s* ctx, shim_val_s* src)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
-  Local<Value> dst = Local<Value>::New(ctx->isolate, SHIM_TO_VAL(src));
+  Local<Value> dst = Local<Value>::New(ctx->isolate, src->handle);
 #else
-  Local<Value> dst = Local<Value>::New(SHIM_TO_VAL(src));
+  Local<Value> dst = Local<Value>::New(src->handle);
 #endif
   return shim_val_alloc(ctx, dst);
 }
@@ -653,7 +644,7 @@ shim_obj_clone(shim_ctx_s* ctx, shim_val_s* src)
 shim_bool_t
 shim_obj_has_name(shim_ctx_s* ctx, shim_val_s* val, const char* name)
 {
-  Local<Object> obj = OBJ_TO_OBJECT(SHIM_TO_VAL(val));
+  Local<Object> obj = OBJ_TO_OBJECT(val->handle);
   return obj->Has(String::NewSymbol(name)) ? TRUE : FALSE;
 }
 
@@ -669,7 +660,7 @@ shim_obj_has_name(shim_ctx_s* ctx, shim_val_s* val, const char* name)
 shim_bool_t
 shim_obj_has_id(shim_ctx_s* ctx, shim_val_s* val, uint32_t id)
 {
-  Local<Object> obj = OBJ_TO_OBJECT(SHIM_TO_VAL(val));
+  Local<Object> obj = OBJ_TO_OBJECT(val->handle);
   return obj->Has(id) ? TRUE : FALSE;
 }
 
@@ -685,8 +676,8 @@ shim_obj_has_id(shim_ctx_s* ctx, shim_val_s* val, uint32_t id)
 shim_bool_t
 shim_obj_has_sym(shim_ctx_s* ctx, shim_val_s* val, shim_val_s* sym)
 {
-  Local<Object> obj = OBJ_TO_OBJECT(SHIM_TO_VAL(val));
-  return obj->Has(OBJ_TO_STRING(SHIM_TO_VAL(sym)));
+  Local<Object> obj = OBJ_TO_OBJECT(val->handle);
+  return obj->Has(OBJ_TO_STRING(sym->handle));
 }
 
 /**
@@ -700,8 +691,8 @@ shim_bool_t
 shim_obj_set_prop_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
   shim_val_s* val)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  return jsobj->Set(String::NewSymbol(name), SHIM_TO_VAL(val));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
+  return jsobj->Set(String::NewSymbol(name), val->handle);
 }
 
 
@@ -716,8 +707,8 @@ shim_bool_t
 shim_obj_set_prop_id(shim_ctx_s* ctx, shim_val_s* obj, uint32_t id,
   shim_val_s* val)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  return jsobj->Set(id, SHIM_TO_VAL(val));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
+  return jsobj->Set(id, val->handle);
 }
 
 
@@ -732,8 +723,8 @@ shim_bool_t
 shim_obj_set_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
   shim_val_s* val)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  return jsobj->Set(SHIM_TO_VAL(sym), SHIM_TO_VAL(val));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
+  return jsobj->Set(sym->handle, val->handle);
 }
 
 /**
@@ -750,7 +741,7 @@ shim_obj_set_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
 shim_bool_t
 shim_obj_set_private(shim_ctx_s* ctx, shim_val_s* obj, void* data)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   Local<String> hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
   return jsobj->SetHiddenValue(hp, External::New(data));
@@ -796,9 +787,9 @@ shim_bool_t
 shim_obj_get_prop_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
   shim_val_s* rval)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
   Local<Value> val = jsobj->Get(String::NewSymbol(name));
-  rval->handle = *val;
+  rval->handle = val;
   rval->type = SHIM_TYPE_UNKNOWN;
   return TRUE;
 }
@@ -815,9 +806,9 @@ shim_bool_t
 shim_obj_get_prop_id(shim_ctx_s* ctx, shim_val_s* obj, uint32_t idx,
   shim_val_s* rval)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
   Local<Value> val = jsobj->Get(idx);
-  rval->handle = *val;
+  rval->handle = val;
   rval->type = SHIM_TYPE_UNKNOWN;
   return TRUE;
 }
@@ -834,9 +825,9 @@ shim_bool_t
 shim_obj_get_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
   shim_val_s* rval)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
-  Local<Value> val = jsobj->Get(SHIM_TO_VAL(sym));
-  rval->handle = *val;
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
+  Local<Value> val = jsobj->Get(sym->handle);
+  rval->handle = val;
   rval->type = SHIM_TYPE_UNKNOWN;
   return TRUE;
 }
@@ -851,7 +842,7 @@ shim_obj_get_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
 shim_bool_t
 shim_obj_get_private(shim_ctx_s* ctx, shim_val_s* obj, void** data)
 {
-  Local<Object> jsobj = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
+  Local<Object> jsobj = OBJ_TO_OBJECT(obj->handle);
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   Local<String> hp = PersistentToLocal<String>(ctx->isolate, hidden_private);
   Local<Value> ext = jsobj->GetHiddenValue(hp);
@@ -870,12 +861,11 @@ shim_obj_get_private(shim_ctx_s* ctx, shim_val_s* obj, void** data)
 shim_persistent_t*
 shim_persistent_new(shim_ctx_s* ctx, shim_val_s* val)
 {
-  VAL_DEFINE(obj, val);
-  shim_persistent_s *p = static_cast<shim_persistent_t*>(malloc(sizeof(shim_persistent_t)));
+  shim_persistent_s *p = static_cast<shim_persistent_s*>(malloc(sizeof(shim_persistent_s)));
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
-  p->handle.Reset(ctx->isolate, obj);
+  p->handle.Reset(ctx->isolate, val->handle);
 #else
-  p->handle = Persistent<Value>::New(obj);
+  p->handle = Persistent<Value>::New(val->handle);
 #endif
   return p;
 }
@@ -897,7 +887,7 @@ shim_persistent_to_val(shim_ctx_s* ctx, shim_persistent_s* pval, shim_val_s** va
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   *val = shim_val_alloc(ctx, PersistentToLocal(ctx->isolate, pval->handle));
 #else
-  *val = shim_val_alloc(ctx, pval->handle);
+  *val = shim_val_alloc(ctx, Local<Value>::New(pval->handle));
 #endif
   return TRUE;
 }
@@ -992,12 +982,12 @@ shim_func_call_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
   size_t argc, shim_val_s** argv, shim_val_s* rval)
 {
   assert(self != NULL);
-  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+  Local<Object> recv = OBJ_TO_OBJECT(self->handle);
 
-  Local<String> str = OBJ_TO_STRING(SHIM_TO_VAL(sym));
+  Local<String> str = OBJ_TO_STRING(sym->handle);
   Handle<Value> ret = shim_call_func(recv, str, argc, argv);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
@@ -1017,11 +1007,11 @@ shim_func_call_name(shim_ctx_s* ctx, shim_val_s* self, const char* name,
   size_t argc, shim_val_s** argv, shim_val_s* rval)
 {
   assert(self != NULL);
-  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+  Local<Object> recv = OBJ_TO_OBJECT(self->handle);
 
   Handle<Value> ret = shim_call_func(recv, String::NewSymbol(name), argc, argv);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
@@ -1040,20 +1030,20 @@ shim_bool_t
 shim_func_call_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* func,
   size_t argc, shim_val_s** argv, shim_val_s* rval)
 {
-  Local<Value> fh = SHIM_TO_VAL(func);
+  Local<Value> fh = func->handle;
   assert(fh->IsFunction());
   Local<Function> fn = fh.As<Function>();
 
   Local<Object> recv;
 
   if (self != NULL)
-    recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+    recv = OBJ_TO_OBJECT(self->handle);
   else
     recv = Object::New();
 
   Handle<Value> ret = shim_call_func(recv, fn, argc, argv);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
   return !tr->HasCaught();
@@ -1074,14 +1064,14 @@ shim_make_callback_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
 {
   assert(self != NULL);
 
-  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
-  Local<String> jsym = OBJ_TO_STRING(SHIM_TO_VAL(sym));
+  Local<Object> recv = OBJ_TO_OBJECT(self->handle);
+  Local<String> jsym = OBJ_TO_STRING(sym->handle);
 
   Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
 
   Handle<Value> ret = node::MakeCallback(recv, jsym, argc, jsargs);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   delete jsargs;
 
@@ -1103,21 +1093,21 @@ shim_make_callback_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* fval,
   size_t argc, shim_val_s** argv, shim_val_s* rval)
 {
   /* TODO check is valid */
-  Local<Value> prop = SHIM_TO_VAL(fval);
+  Local<Value> prop = fval->handle;
   Local<Function> fn = Local<Function>::Cast(prop);
   Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
 
   Local<Object> recv;
 
   if (self != NULL) {
-    recv = OBJ_TO_OBJECT(SHIM_TO_VAL(self));
+    recv = OBJ_TO_OBJECT(self->handle);
   } else {
     recv = Object::New();
   }
 
   Handle<Value> ret = node::MakeCallback(recv, fn, argc, jsargs);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   delete jsargs;
 
@@ -1141,11 +1131,11 @@ shim_make_callback_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
   assert(obj != NULL);
 
   Local<Value>* jsargs = shim_vals_to_handles(argc, argv);
-  Local<Object> recv = OBJ_TO_OBJECT(SHIM_TO_VAL(obj));
+  Local<Object> recv = OBJ_TO_OBJECT(obj->handle);
 
   Handle<Value> ret = node::MakeCallback(recv, name, argc, jsargs);
   if (rval != NULL)
-          rval->handle = *ret;
+          rval->handle = ret;
 
   delete jsargs;
 
@@ -1171,7 +1161,7 @@ shim_number_new(shim_ctx_s* ctx, double d)
 double
 shim_number_value(shim_val_s* val)
 {
-  return SHIM_TO_VAL(val)->NumberValue();
+  return val->handle->NumberValue();
 }
 
 /**
@@ -1203,7 +1193,7 @@ shim_integer_uint(shim_ctx_s* ctx, uint32_t i)
 int64_t
 shim_integer_value(shim_val_s* val)
 {
-  return SHIM_TO_VAL(val)->IntegerValue();
+  return val->handle->IntegerValue();
 }
 
 /**
@@ -1213,7 +1203,7 @@ shim_integer_value(shim_val_s* val)
 int32_t
 shim_integer_int32_value(shim_val_s* val)
 {
-  return SHIM_TO_VAL(val)->Int32Value();
+  return val->handle->Int32Value();
 }
 
 /**
@@ -1223,7 +1213,7 @@ shim_integer_int32_value(shim_val_s* val)
 uint32_t
 shim_integer_uint32_value(shim_val_s* val)
 {
-  return SHIM_TO_VAL(val)->Uint32Value();
+  return val->handle->Uint32Value();
 }
 
 /**
@@ -1266,7 +1256,7 @@ shim_string_new_copyn(shim_ctx_s* ctx, const char* data, size_t len)
 size_t
 shim_string_length(shim_val_s* val)
 {
-  return OBJ_TO_STRING(SHIM_TO_VAL(val))->Length();
+  return OBJ_TO_STRING(val->handle)->Length();
 }
 
 /**
@@ -1276,7 +1266,7 @@ shim_string_length(shim_val_s* val)
 size_t
 shim_string_length_utf8(shim_val_s* val)
 {
-  return OBJ_TO_STRING(SHIM_TO_VAL(val))->Utf8Length();
+  return OBJ_TO_STRING(val->handle)->Utf8Length();
 }
 
 /**
@@ -1288,7 +1278,7 @@ shim_string_length_utf8(shim_val_s* val)
 char*
 shim_string_value(shim_val_s* val)
 {
-  String::Utf8Value str(OBJ_TO_STRING(SHIM_TO_VAL(val)));
+  String::Utf8Value str(OBJ_TO_STRING(val->handle));
   return strdup(*str);
 }
 
@@ -1303,7 +1293,7 @@ size_t
 shim_string_write_ascii(shim_val_s* val, char* buff, size_t start, size_t len,
   int32_t options)
 {
-  String str = **OBJ_TO_STRING(SHIM_TO_VAL(val));
+  String str = **OBJ_TO_STRING(val->handle);
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   return str.WriteOneByte(reinterpret_cast<uint8_t*>(buff), start, len);
 #else
@@ -1329,7 +1319,7 @@ shim_array_new(shim_ctx_s* ctx, size_t len)
 size_t
 shim_array_length(shim_val_s* arr)
 {
-  return OBJ_TO_ARRAY(SHIM_TO_VAL(arr))->Length();
+  return OBJ_TO_ARRAY(arr->handle)->Length();
 }
 
 /**
@@ -1342,7 +1332,7 @@ shim_array_length(shim_val_s* arr)
 shim_bool_t
 shim_array_get(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s* rval)
 {
-  rval->handle = *OBJ_TO_ARRAY(SHIM_TO_VAL(arr))->Get(idx);
+  rval->handle = OBJ_TO_ARRAY(arr->handle)->Get(idx);
   return TRUE;
 }
 
@@ -1356,7 +1346,7 @@ shim_array_get(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s* rval)
 shim_bool_t
 shim_array_set(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s* val)
 {
-  return OBJ_TO_ARRAY(SHIM_TO_VAL(arr))->Set(idx, SHIM_TO_VAL(val));
+  return OBJ_TO_ARRAY(arr->handle)->Set(idx, val->handle);
 }
 
 /**
@@ -1370,7 +1360,7 @@ shim_buffer_new(shim_ctx_s* ctx, size_t len)
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(len));
 #else
-  return shim_val_alloc(ctx, Buffer::New(len)->handle_);
+  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(len)->handle_));
 #endif
 }
 
@@ -1386,9 +1376,9 @@ shim_buffer_new_copy(shim_ctx_s* ctx, const char* data, size_t len)
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(data, len));
 #elif NODE_VERSION_AT_LEAST(0, 10, 0)
-  return shim_val_alloc(ctx, Buffer::New(data, len)->handle_);
+  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(data, len)->handle_));
 #else
-  return shim_val_alloc(ctx, Buffer::New((char*)data, len)->handle_);
+  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New((char*)data, len)->handle_));
 #endif
 }
 
@@ -1409,7 +1399,7 @@ shim_buffer_new_external(shim_ctx_s* ctx, char* data, size_t len,
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(data, len, cb, hint));
 #else
-  return shim_val_alloc(ctx, Buffer::New(data, len, cb, hint)->handle_);
+  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(data, len, cb, hint)->handle_));
 #endif
 }
 
@@ -1420,7 +1410,7 @@ shim_buffer_new_external(shim_ctx_s* ctx, char* data, size_t len,
 char*
 shim_buffer_value(shim_val_s* val)
 {
-  Local<Value>v(SHIM_TO_VAL(val));
+  Local<Value>v(val->handle);
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   assert(node::Buffer::HasInstance(v));
   return node::Buffer::Data(v);
@@ -1440,7 +1430,7 @@ shim_buffer_value(shim_val_s* val)
 size_t
 shim_buffer_length(shim_val_s* val)
 {
-  Local<Value>v(SHIM_TO_VAL(val));
+  Local<Value>v(val->handle);
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   assert(node::Buffer::HasInstance(v));
   return node::Buffer::Length(v);
@@ -1484,7 +1474,7 @@ void*
 shim_external_value(shim_ctx_s* ctx, shim_val_s* obj)
 {
   void* ret;
-  Local<External> e = SHIM_TO_VAL(obj).As<External>();
+  Local<External> e = obj->handle.As<External>();
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   ret = e->Value();
@@ -1561,7 +1551,7 @@ shim_exception_pending(shim_ctx_s* ctx)
 void
 shim_exception_set(shim_ctx_s* ctx, shim_val_s* val)
 {
-  ThrowException(SHIM_TO_VAL(val));
+  ThrowException(val->handle);
 }
 
 /**
@@ -1573,7 +1563,7 @@ shim_bool_t
 shim_exception_get(shim_ctx_s* ctx, shim_val_s* rval)
 {
   TryCatch* trycatch = static_cast<TryCatch*>(ctx->trycatch);
-  rval->handle = *trycatch->Exception();
+  rval->handle = trycatch->Exception();
   return TRUE;
 }
 
@@ -1643,7 +1633,7 @@ shim_unpack_type(shim_ctx_s* ctx, shim_val_s* arg, shim_type_t type,
   if (!shim::shim_value_is(arg, type))
     return FALSE;
 
-  Local<Value> val(SHIM_TO_VAL(arg));
+  Local<Value> val(arg->handle);
   shim_val_s* vrval = *(shim_val_s**)rval;
   switch(type) {
     case SHIM_TYPE_BOOL:
@@ -1668,11 +1658,11 @@ shim_unpack_type(shim_ctx_s* ctx, shim_val_s* arg, shim_type_t type,
       *(char**)rval = shim::shim_buffer_value(arg);
       break;
     case SHIM_TYPE_STRING:
-      vrval->handle = *OBJ_TO_STRING(val);
+      vrval->handle = OBJ_TO_STRING(val);
       vrval->type = SHIM_TYPE_STRING;
       break;
     case SHIM_TYPE_FUNCTION:
-      vrval->handle = *val;
+      vrval->handle = val;
       vrval->type = SHIM_TYPE_FUNCTION;
       break;
     case SHIM_TYPE_UNDEFINED:
@@ -1893,6 +1883,9 @@ __attribute__((constructor)) void shim_module_preinit(void)
 	(void) snprintf(namebuf, sizeof (namebuf), "%s_module", shim_modname);
 	module = (struct shim_module_struct *)dlsym(RTLD_SELF, namebuf);
 	module->func = (node_register_func)shim_module_initialize;
+
+  shim__undefined.type = SHIM_TYPE_UNDEFINED;
+  shim__null.type = SHIM_TYPE_NULL;
 }
 
 } /* end extern "C" */

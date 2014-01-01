@@ -26,17 +26,12 @@
 
 #include "shim.h"
 
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-#define V8_USE_UNSAFE_HANDLES 1
-#define V8_ALLOW_ACCESS_TO_RAW_HANDLE_CONSTRUCTOR 1
-#endif
-
 #include "v8.h"
 #include "node.h"
 #include "node_buffer.h"
 
 struct shim_val_s {
-  void* handle;
+  v8::Local<v8::Value> handle;
   enum shim_type type;
 };
 
@@ -47,9 +42,9 @@ struct shim_persistent_s {
 
 
 struct shim_ctx_s {
-  void* scope;
+  v8::HandleScope* scope;
   v8::Isolate* isolate;
-  void* trycatch;
+  v8::TryCatch* trycatch;
   void* allocs;
 };
 
