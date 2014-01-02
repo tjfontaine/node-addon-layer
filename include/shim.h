@@ -93,6 +93,9 @@ struct shim_module_struct {
   void* handle;             /**< Used internally by node */
   const char* fname;        /**< Filename of module */
   node_register_func func;  /**< Always represents the C++ entry point */
+#if NODE_VERSION_AT_LEAST(0, 11, 9)
+  void* context_func;
+#endif
   const char* mname;        /**< Module name */
 };
 
@@ -117,15 +120,28 @@ struct shim_module_struct {
  * \def SHIM_MODULE(name, func)
  * Use this to define the \a name and \a func entry point of your module
  */
-#define SHIM_MODULE(name, func)                                               \
-register_func shim_initialize = &func;                                        \
-struct shim_module_struct name ## _module = {                                 \
+#if NODE_VERSION_AT_LEAST(0, 11, 9)
+#define SHIM_MODULE_INIT(name) {                                              \
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  NULL,									      \
+  NULL,                                                                       \
+  NULL,                                                                       \
   #name,                                                                      \
-};									      \
+};
+#else
+#define SHIM_MODULE_INIT(name) {                                              \
+  SHIM_NODE_ABI,                                                              \
+  NULL,                                                                       \
+  __FILE__,                                                                   \
+  NULL,                                                                       \
+  #name,                                                                      \
+};
+#endif
+
+#define SHIM_MODULE(name, func)                                               \
+register_func shim_initialize = &func;                                        \
+struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)            \
 const char* shim_modname = # name ;
 
 /** The signature of the entry point for exported functions */
