@@ -104,7 +104,7 @@ shim_val_s*
 shim_val_alloc(shim_ctx_s* ctx, SHIM__HANDLE_TYPE val,
   shim_type_t type = SHIM_TYPE_UNKNOWN)
 {
-  shim_val_s* obj = static_cast<shim_val_s*>(malloc(sizeof(shim_val_s)));
+  shim_val_s* obj = new shim_val_s;
   obj->handle = val;
   obj->type = type;
   return obj;
@@ -561,9 +561,9 @@ shim_null()
 shim_val_s*
 shim_value_alloc(void)
 {
-	shim_val_s *val = (shim_val_s *)malloc(sizeof (shim_val_s));
-	bzero(val, sizeof (*val));
-	return (val);
+  shim_val_s *val = new shim_val_s;
+  bzero(val, sizeof (*val));
+  return (val);
 }
 
 /**
@@ -578,7 +578,7 @@ shim_value_release(shim_val_s* val)
 {
   if (val != NULL && val->type != SHIM_TYPE_NULL
       && val->type != SHIM_TYPE_UNDEFINED)
-    free(val);
+    delete val;
 }
 
 
@@ -865,7 +865,7 @@ shim_obj_get_private(shim_ctx_s* ctx, shim_val_s* obj, void** data)
 shim_persistent_t*
 shim_persistent_new(shim_ctx_s* ctx, shim_val_s* val)
 {
-  shim_persistent_s *p = static_cast<shim_persistent_s*>(malloc(sizeof(shim_persistent_s)));
+  shim_persistent_s *p = new shim_persistent_s;
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   p->handle.Reset(ctx->isolate, val->handle);
 #else
@@ -881,7 +881,7 @@ void
 shim_persistent_dispose(shim_persistent_s* val)
 {
   val->handle.Dispose();
-  free(val);
+  delete val;
 }
 
 
@@ -908,7 +908,7 @@ common_weak_cb(Persistent<Value> obj, void* data)
   weak_baton_t* baton = static_cast<weak_baton_t*>(data);
 #endif
 
-  shim_persistent_s* tmp = static_cast<shim_persistent_s*>(malloc(sizeof(shim_persistent_s)));
+  shim_persistent_s* tmp = new shim_persistent_s;
 
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   tmp->handle.Reset(ctx_isolate, PersistentToLocal<Value>(ctx_isolate, *pobj));
