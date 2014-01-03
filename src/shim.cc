@@ -487,11 +487,8 @@ shim_value_to(shim_ctx_s* ctx, shim_val_s* val, shim_type_t type,
     return TRUE;
   }
 
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-  Local<Value> obj = val->handle;
-#else
-  Local<Value> obj = Local<Value>::New(val->handle);
-#endif
+
+  Local<Value> obj = SHIM__TO_LOCAL(val->handle);
 
   switch (type) {
     case SHIM_TYPE_UNDEFINED:
@@ -1366,7 +1363,7 @@ shim_buffer_new(shim_ctx_s* ctx, size_t len)
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(len));
 #else
-  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(len)->handle_));
+  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(len)->handle_));
 #endif
 }
 
@@ -1382,9 +1379,9 @@ shim_buffer_new_copy(shim_ctx_s* ctx, const char* data, size_t len)
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(data, len));
 #elif NODE_VERSION_AT_LEAST(0, 10, 0)
-  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(data, len)->handle_));
+  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(data, len)->handle_));
 #else
-  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New((char*)data, len)->handle_));
+  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New((char*)data, len)->handle_));
 #endif
 }
 
@@ -1405,7 +1402,7 @@ shim_buffer_new_external(shim_ctx_s* ctx, char* data, size_t len,
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   return shim_val_alloc(ctx, node::Buffer::New(data, len, cb, hint));
 #else
-  return shim_val_alloc(ctx, Local<Value>::New(Buffer::New(data, len, cb, hint)->handle_));
+  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(data, len, cb, hint)->handle_));
 #endif
 }
 
@@ -1416,11 +1413,7 @@ shim_buffer_new_external(shim_ctx_s* ctx, char* data, size_t len,
 char*
 shim_buffer_value(shim_val_s* val)
 {
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-  Local<Value> v = val->handle;
-#else
-  Local<Value> v = Local<Value>::New(val->handle);
-#endif
+  Local<Value> v = SHIM__TO_LOCAL(val->handle);
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   assert(node::Buffer::HasInstance(v));
@@ -1441,11 +1434,7 @@ shim_buffer_value(shim_val_s* val)
 size_t
 shim_buffer_length(shim_val_s* val)
 {
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-  Local<Value> v = val->handle;
-#else
-  Local<Value> v = Local<Value>::New(val->handle);
-#endif
+  Local<Value> v = SHIM__TO_LOCAL(val->handle);
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
   assert(node::Buffer::HasInstance(v));
@@ -1649,11 +1638,7 @@ shim_unpack_type(shim_ctx_s* ctx, shim_val_s* arg, shim_type_t type,
   if (!shim::shim_value_is(arg, type))
     return FALSE;
 
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-  Local<Value> val = arg->handle;
-#else
-  Local<Value> val = Local<Value>::New(arg->handle);
-#endif
+  Local<Value> val = SHIM__TO_LOCAL(arg->handle);
 
   shim_val_s* vrval = *(shim_val_s**)rval;
   switch(type) {
