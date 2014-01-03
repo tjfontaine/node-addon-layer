@@ -901,7 +901,6 @@ void
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
 common_weak_cb(Isolate* iso, Persistent<Value>* pobj, weak_baton_t* baton)
 {
-  SHIM_PROLOGUE(ctx);
 #else
 common_weak_cb(Persistent<Value> obj, void* data)
 {
@@ -910,13 +909,16 @@ common_weak_cb(Persistent<Value> obj, void* data)
 
   shim_persistent_s* tmp = new shim_persistent_s;
 
+  SHIM_PROLOGUE(ctx);
+  SHIM_CTX(ctx);
+
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
   tmp->handle.Reset(ctx_isolate, PersistentToLocal<Value>(ctx_isolate, *pobj));
 #else
   tmp->handle = obj;
 #endif
 
-  baton->weak_cb(tmp, baton->data);
+  baton->weak_cb(&ctx, tmp, baton->data);
   delete baton;
 }
 

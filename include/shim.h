@@ -274,7 +274,7 @@ shim_bool_t shim_persistent_to_val(shim_ctx_t* ctx, shim_persistent_t* pval,
 
 
 /** Callback fired when a peristent is about to be collected  */
-typedef void (* shim_weak_cb)(shim_persistent_t*, void*);
+typedef void (* shim_weak_cb)(shim_ctx_t* ctx, shim_persistent_t*, void*);
 /** Make a persistent value weak */
 void shim_obj_make_weak(shim_ctx_t* ctx, shim_persistent_t* val, void* data,
   shim_weak_cb cb);
