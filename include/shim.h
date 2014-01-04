@@ -186,7 +186,7 @@ typedef struct shim_fspec_s {
 shim_bool_t shim_value_is(shim_val_t* val, shim_type_t type);
 /** Convert the value to a given type */
 shim_bool_t shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
-  shim_val_t* rval);
+  shim_val_t** rval);
 
 
 /** Allocate memory to hold an arbitrary value. */
@@ -245,13 +245,13 @@ shim_bool_t shim_obj_set_funcs(shim_ctx_t* ctx, shim_val_t* recv,
 
 /** Get the value for the property name */
 shim_bool_t shim_obj_get_prop_name(shim_ctx_t* ctx, shim_val_t* obj,
-  const char* name, shim_val_t* rval);
+  const char* name, shim_val_t** rval);
 /** Get the value for the given id */
 shim_bool_t shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj,
-  uint32_t id, shim_val_t* rval);
+  uint32_t id, shim_val_t** rval);
 /** Get the value for the given symbol */
 shim_bool_t shim_obj_get_prop_sym(shim_ctx_t* ctx, shim_val_t* obj,
-  shim_val_t* sym, shim_val_t* rval);
+  shim_val_t* sym, shim_val_t** rval);
 /** Get the arbitrary data associated with the object */
 shim_bool_t shim_obj_get_private(shim_ctx_t* ctx, shim_val_t* obj, void** data);
 
@@ -297,24 +297,24 @@ shim_val_t* shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc,
 
 /** Get the symbol from the object as a function and call it */
 shim_bool_t shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self,
-  shim_val_t* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  shim_val_t* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
 /** Get the function by name from an object and call it */
 shim_bool_t shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self,
-  const char* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  const char* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
 /** Call the given function */
 shim_bool_t shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self,
-  shim_val_t* func, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  shim_val_t* func, size_t argc, shim_val_t** argv, shim_val_t** rval);
 
 
 /** Get a function by symbol and process the callback */
 shim_bool_t shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self,
-  shim_val_t* sym, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  shim_val_t* sym, size_t argc, shim_val_t** argv, shim_val_t** rval);
 /** Process the callback for the given function */
 shim_bool_t shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self,
-  shim_val_t* fval, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  shim_val_t* fval, size_t argc, shim_val_t** argv, shim_val_t** rval);
 /** Process the callback for the given name */
 shim_bool_t shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj,
-  const char* name, size_t argc, shim_val_t** argv, shim_val_t* rval);
+  const char* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
 
 /**@}*/
 
@@ -382,7 +382,7 @@ shim_val_t* shim_array_new(shim_ctx_t* ctx, size_t len);
 size_t shim_array_length(shim_val_t* arr);
 /** Get the value at the given index */
 shim_bool_t shim_array_get(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx,
-  shim_val_t* rval);
+  shim_val_t** rval);
 /** Set the value at the given index */
 shim_bool_t shim_array_set(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx,
   shim_val_t* val);
@@ -445,7 +445,7 @@ void shim_exception_clear(shim_ctx_t* ctx);
 /** Set the pending exception */
 void shim_exception_set(shim_ctx_t* ctx, shim_val_t* val);
 /** Get the pending exception */
-shim_bool_t shim_exception_get(shim_ctx_t* ctx, shim_val_t* rval);
+shim_bool_t shim_exception_get(shim_ctx_t* ctx, shim_val_t** rval);
 
 /** Throw an error */
 void shim_throw_error(shim_ctx_t* ctx, const char* msg, ...);

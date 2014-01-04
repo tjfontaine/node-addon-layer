@@ -516,8 +516,11 @@ shim_value_is(shim_val_s* val, shim_type_t type)
  */
 shim_bool_t
 shim_value_to(shim_ctx_s* ctx, shim_val_s* val, shim_type_t type,
-  shim_val_s* rval)
+  shim_val_s** srval)
 {
+  shim_val_s* rval = shim_value_alloc();
+  *srval = rval;
+
   if (val->type == type) {
     rval->type = type;
     rval->handle = val->handle;
@@ -823,12 +826,11 @@ shim_obj_set_funcs(shim_ctx_s* ctx, shim_val_s* recv,
  */
 shim_bool_t
 shim_obj_get_prop_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
-  shim_val_s* rval)
+  shim_val_s** rval)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(String::NewSymbol(name));
-  rval->handle = val;
-  rval->type = SHIM_TYPE_UNKNOWN;
+  *rval = shim_val_alloc(ctx, val);
   return TRUE;
 }
 
@@ -842,12 +844,11 @@ shim_obj_get_prop_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
  */
 shim_bool_t
 shim_obj_get_prop_id(shim_ctx_s* ctx, shim_val_s* obj, uint32_t idx,
-  shim_val_s* rval)
+  shim_val_s** rval)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(idx);
-  rval->handle = val;
-  rval->type = SHIM_TYPE_UNKNOWN;
+  *rval = shim_val_alloc(ctx, val);
   return TRUE;
 }
 
@@ -861,12 +862,11 @@ shim_obj_get_prop_id(shim_ctx_s* ctx, shim_val_s* obj, uint32_t idx,
  */
 shim_bool_t
 shim_obj_get_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
-  shim_val_s* rval)
+  shim_val_s** rval)
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(sym->handle);
-  rval->handle = val;
-  rval->type = SHIM_TYPE_UNKNOWN;
+  *rval = shim_val_alloc(ctx, val);
   return TRUE;
 }
 
@@ -1019,18 +1019,18 @@ shim_func_new(shim_ctx_s* ctx, shim_func cfunc, size_t argc, int32_t flags,
  */
 shim_bool_t
 shim_func_call_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   assert(self != NULL);
   Local<Object> recv = OBJ_TO_OBJECT(SHIM__TO_LOCAL(self->handle));
 
   Local<String> str = OBJ_TO_STRING(SHIM__TO_LOCAL(sym->handle));
   Handle<Value> ret = shim_call_func(recv, str, argc, argv);
-  if (rval != NULL)
-          rval->handle = ret;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1044,17 +1044,17 @@ shim_func_call_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
  */
 shim_bool_t
 shim_func_call_name(shim_ctx_s* ctx, shim_val_s* self, const char* name,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   assert(self != NULL);
   Local<Object> recv = OBJ_TO_OBJECT(SHIM__TO_LOCAL(self->handle));
 
   Handle<Value> ret = shim_call_func(recv, String::NewSymbol(name), argc, argv);
-  if (rval != NULL)
-          rval->handle = ret;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1068,7 +1068,7 @@ shim_func_call_name(shim_ctx_s* ctx, shim_val_s* self, const char* name,
  */
 shim_bool_t
 shim_func_call_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* func,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   SHIM__HANDLE_TYPE fh = func->handle;
   assert(fh->IsFunction());
@@ -1082,11 +1082,11 @@ shim_func_call_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* func,
     recv = Object::New();
 
   Handle<Value> ret = shim_call_func(recv, fn, argc, argv);
-  if (rval != NULL)
-          rval->handle = ret;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1100,7 +1100,7 @@ shim_func_call_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* func,
  */
 shim_bool_t
 shim_make_callback_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   assert(self != NULL);
 
@@ -1110,13 +1110,13 @@ shim_make_callback_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
   SHIM__HANDLE_TYPE* jsargs = shim_vals_to_handles(argc, argv);
 
   Handle<Value> ret = node::MakeCallback(recv, jsym, argc, jsargs);
-  if (rval != NULL)
-          rval->handle = ret;
 
   delete jsargs;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1130,7 +1130,7 @@ shim_make_callback_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
  */
 shim_bool_t
 shim_make_callback_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* fval,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   /* TODO check is valid */
   SHIM__HANDLE_TYPE prop = fval->handle;
@@ -1146,13 +1146,13 @@ shim_make_callback_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* fval,
   }
 
   Handle<Value> ret = node::MakeCallback(recv, fn, argc, jsargs);
-  if (rval != NULL)
-          rval->handle = ret;
 
   delete jsargs;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1166,7 +1166,7 @@ shim_make_callback_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* fval,
  */
 shim_bool_t
 shim_make_callback_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
-  size_t argc, shim_val_s** argv, shim_val_s* rval)
+  size_t argc, shim_val_s** argv, shim_val_s** rval)
 {
   assert(obj != NULL);
 
@@ -1174,13 +1174,13 @@ shim_make_callback_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
   Local<Object> recv = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
 
   Handle<Value> ret = node::MakeCallback(recv, name, argc, jsargs);
-  if (rval != NULL)
-          rval->handle = ret;
 
   delete jsargs;
 
-  TryCatch *tr = static_cast<TryCatch*>(ctx->trycatch);
-  return !tr->HasCaught();
+  if (rval != NULL)
+    *rval = shim_val_alloc(ctx, ret);
+
+  return !ctx->trycatch->HasCaught();
 }
 
 /**
@@ -1370,9 +1370,9 @@ shim_array_length(shim_val_s* arr)
  * \return TRUE if the value existed, otherwise FALSE
  */
 shim_bool_t
-shim_array_get(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s* rval)
+shim_array_get(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s** rval)
 {
-  rval->handle = OBJ_TO_ARRAY(SHIM__TO_LOCAL(arr->handle))->Get(idx);
+  *rval = shim_val_alloc(ctx, OBJ_TO_ARRAY(SHIM__TO_LOCAL(arr->handle))->Get(idx));
   return TRUE;
 }
 
@@ -1602,10 +1602,9 @@ shim_exception_set(shim_ctx_s* ctx, shim_val_s* val)
  * \return TRUE if there was an exception, otherwise FALSE
  */
 shim_bool_t
-shim_exception_get(shim_ctx_s* ctx, shim_val_s* rval)
+shim_exception_get(shim_ctx_s* ctx, shim_val_s** rval)
 {
-  TryCatch* trycatch = static_cast<TryCatch*>(ctx->trycatch);
-  rval->handle = trycatch->Exception();
+  *rval = shim_val_alloc(ctx, ctx->trycatch->Exception());
   return TRUE;
 }
 
@@ -1615,8 +1614,7 @@ shim_exception_get(shim_ctx_s* ctx, shim_val_s* rval)
 void
 shim_exception_clear(shim_ctx_s* ctx)
 {
-  TryCatch* trycatch = static_cast<TryCatch*>(ctx->trycatch);
-  trycatch->Reset();
+  ctx->trycatch->Reset();
 }
 
 /**
