@@ -83,4 +83,28 @@ typedef struct weak_baton_s {
   void* data;
 } weak_baton_t;
 
+#define OBJ_TO_ARRAY(obj) \
+  ((obj)->IsArray() ? (obj).As<Array>() : Local<Array>::Cast(obj))
+
+#define OBJ_TO_OBJECT(obj) \
+  ((obj)->IsObject() ? (obj).As<Object>() : (obj)->ToObject())
+
+#define OBJ_TO_STRING(obj) \
+  ((obj)->IsObject() ? (obj).As<String>() : (obj)->ToString())
+
+#define OBJ_TO_INT32(obj) \
+  ((obj)->ToInt32())
+
+#define OBJ_TO_UINT32(obj) \
+  ((obj)->ToUint32())
+
+#define OBJ_TO_NUMBER(obj) \
+  ((obj)->IsNumber() ? (obj).As<Number>() : (obj)->ToNumber())
+
+#define OBJ_TO_EXTERNAL(obj) \
+  ((obj)->IsExternal() ? (obj).As<External>() : Local<External>::Cast(obj))
+
+#define OBJ_TO_FUNCTION(obj) \
+  ((obj)->IsFunction() ? (obj).As<Function>() : Local<Function>::Cast(obj))
+
 #endif

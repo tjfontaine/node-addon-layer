@@ -328,6 +328,68 @@ inline v8::Local<TypeName> PersistentToLocal(
 }
 #endif
 
+shim_bool_t
+shim_unpack_type(shim_ctx_s* ctx, shim_val_s* arg, shim_type_t type,
+  void* rval, shim_bool_t* allocated)
+{
+  *allocated = FALSE;
+
+  if (!shim_value_is(arg, type))
+    return FALSE;
+
+  Local<Value> val = SHIM__TO_LOCAL(arg->handle);
+
+  shim_val_s** srval = static_cast<shim_val_s**>(rval);
+
+  switch(type) {
+    case SHIM_TYPE_BOOL:
+      *(shim_bool_t*)rval = val->BooleanValue();
+      break;
+    case SHIM_TYPE_INTEGER:
+      *(int64_t*)rval = val->IntegerValue();
+      break;
+    case SHIM_TYPE_UINT32:
+      *(uint32_t*)rval = val->Uint32Value();
+      break;
+    case SHIM_TYPE_INT32:
+      *(int32_t*)rval = val->Int32Value();
+      break;
+    case SHIM_TYPE_NUMBER:
+      *(double*)rval = val->NumberValue();
+      break;
+    case SHIM_TYPE_EXTERNAL:
+      *(void**)rval = shim_external_value(ctx, arg);
+      break;
+    case SHIM_TYPE_BUFFER:
+      *(char**)rval = shim_buffer_value(arg);
+      break;
+    case SHIM_TYPE_STRING:
+      *srval = shim_value_alloc();
+      *allocated = TRUE;
+      SHIM_DEBUG("allocating string at location %p with dest %p\n", srval, *srval);
+      (*srval)->handle = OBJ_TO_STRING(val);
+      (*srval)->type = SHIM_TYPE_STRING;
+      break;
+    case SHIM_TYPE_FUNCTION:
+      *srval = shim_value_alloc();
+      *allocated = TRUE;
+      (*srval)->handle = val;
+      (*srval)->type = SHIM_TYPE_FUNCTION;
+      break;
+    case SHIM_TYPE_UNDEFINED:
+    case SHIM_TYPE_NULL:
+    case SHIM_TYPE_DATE:
+    case SHIM_TYPE_ARRAY:
+    case SHIM_TYPE_OBJECT:
+    default:
+      return FALSE;
+      break;
+  }
+
+  return TRUE;
+}
+
+
 extern "C"
 {
 extern const char *shim_modname;
@@ -441,31 +503,6 @@ shim_value_is(shim_val_s* val, shim_type_t type)
 
   return ret;
 }
-
-
-#define OBJ_TO_ARRAY(obj) \
-  ((obj)->IsArray() ? (obj).As<Array>() : Local<Array>::Cast(obj))
-
-#define OBJ_TO_OBJECT(obj) \
-  ((obj)->IsObject() ? (obj).As<Object>() : (obj)->ToObject())
-
-#define OBJ_TO_STRING(obj) \
-  ((obj)->IsObject() ? (obj).As<String>() : (obj)->ToString())
-
-#define OBJ_TO_INT32(obj) \
-  ((obj)->ToInt32())
-
-#define OBJ_TO_UINT32(obj) \
-  ((obj)->ToUint32())
-
-#define OBJ_TO_NUMBER(obj) \
-  ((obj)->IsNumber() ? (obj).As<Number>() : (obj)->ToNumber())
-
-#define OBJ_TO_EXTERNAL(obj) \
-  ((obj)->IsExternal() ? (obj).As<External>() : Local<External>::Cast(obj))
-
-#define OBJ_TO_FUNCTION(obj) \
-  ((obj)->IsFunction() ? (obj).As<Function>() : Local<Function>::Cast(obj))
 
 /**
  * \param ctx The currently executed context
@@ -1635,53 +1672,14 @@ shim_bool_t
 shim_unpack_type(shim_ctx_s* ctx, shim_val_s* arg, shim_type_t type,
   void* rval)
 {
-  if (!shim::shim_value_is(arg, type))
-    return FALSE;
+  shim_bool_t allocated = FALSE;
+  shim_bool_t ret = shim::shim_unpack_type(ctx, arg, type, rval, &allocated);
 
-  Local<Value> val = SHIM__TO_LOCAL(arg->handle);
+  if (ret == FALSE)
+    if (allocated)
+      shim::shim_value_release(*static_cast<shim_val_s**>(rval));
 
-  shim_val_s* vrval = *(shim_val_s**)rval;
-  switch(type) {
-    case SHIM_TYPE_BOOL:
-      *(shim_bool_t*)rval = val->BooleanValue();
-      break;
-    case SHIM_TYPE_INTEGER:
-      *(int64_t*)rval = val->IntegerValue();
-      break;
-    case SHIM_TYPE_UINT32:
-      *(uint32_t*)rval = val->Uint32Value();
-      break;
-    case SHIM_TYPE_INT32:
-      *(int32_t*)rval = val->Int32Value();
-      break;
-    case SHIM_TYPE_NUMBER:
-      *(double*)rval = val->NumberValue();
-      break;
-    case SHIM_TYPE_EXTERNAL:
-      *(void**)rval = shim::shim_external_value(ctx, arg);
-      break;
-    case SHIM_TYPE_BUFFER:
-      *(char**)rval = shim::shim_buffer_value(arg);
-      break;
-    case SHIM_TYPE_STRING:
-      vrval->handle = OBJ_TO_STRING(val);
-      vrval->type = SHIM_TYPE_STRING;
-      break;
-    case SHIM_TYPE_FUNCTION:
-      vrval->handle = val;
-      vrval->type = SHIM_TYPE_FUNCTION;
-      break;
-    case SHIM_TYPE_UNDEFINED:
-    case SHIM_TYPE_NULL:
-    case SHIM_TYPE_DATE:
-    case SHIM_TYPE_ARRAY:
-    case SHIM_TYPE_OBJECT:
-    default:
-      return FALSE;
-      break;
-  }
-
-  return TRUE;
+  return ret;
 }
 
 /**
@@ -1718,6 +1716,9 @@ shim_unpack(shim_ctx_s* ctx, shim_args_t* args, shim_type_t type, ...)
 {
   size_t cur;
   shim_type_t ctype = type;
+  shim_val_s** allocs = new shim_val_s*[args->argc];
+  size_t alloc_count = 0;
+  shim_bool_t ret = TRUE;
   va_list ap;
 
   va_start(ap, type);
@@ -1725,20 +1726,35 @@ shim_unpack(shim_ctx_s* ctx, shim_args_t* args, shim_type_t type, ...)
   for (cur = 0, ctype = type; ctype != SHIM_TYPE_UNKNOWN && cur < args->argc; cur++)
   {
     void* rval = va_arg(ap, void*);
+    shim_bool_t allocated = FALSE;
 
-    if(!shim::shim_unpack_one(ctx, args, cur, ctype, rval)) {
+    SHIM_DEBUG("SHIM UNPACK argument %lu/%lu of type %s and location %p\n",
+      cur, args->argc, shim_type_str(ctype), rval);
+    if(!shim::shim_unpack_type(ctx, args->argv[cur], ctype, rval, &allocated)) {
       /* TODO this should use a type string */
       shim::shim_throw_type_error(ctx, "Argument %d not of type %s", cur,
         shim_type_str(ctype));
-      return FALSE;
+      ret = FALSE;
     }
+
+    if (allocated)
+      allocs[alloc_count++] = *static_cast<shim_val_s**>(rval);
+
+    if (ret == FALSE)
+      break;
 
     ctype = static_cast<shim_type_t>(va_arg(ap, int));
   }
 
   va_end(ap);
 
-  return TRUE;
+  if (ret == FALSE)
+    for (size_t i = 0; i < alloc_count; i++)
+      shim::shim_value_release(allocs[i]);
+
+  delete allocs;
+
+  return ret;
 }
 
 /**
