@@ -253,16 +253,20 @@ Static(const Arguments& args)
   if(sargs.ret != NULL) {
     switch(sargs.ret->type) {
       case SHIM_TYPE_UNDEFINED:
+        SHIM_DEBUG("SHIM RET Undefined\n");
         ret = Undefined();
         break;
       case SHIM_TYPE_NULL:
+        SHIM_DEBUG("SHIM RET Null\n");
         ret = Null();
         break;
       default:
         ret = sargs.ret->handle;
+        SHIM_DEBUG("SHIM RET Value -- IsExternal %d\n", ret->IsExternal());
         break;
     }
   } else {
+    SHIM_DEBUG("SHIM RET PTR NULL\n");
     ret = Null();
   }
 
@@ -296,7 +300,7 @@ Static(const Arguments& args)
   if (ctx_trycatch.HasCaught()) {
     return ctx_trycatch.Exception();
   } else {
-    return ctx_scope.Close(Handle<Value>(ret));
+    return ctx_scope.Close(ret);
   }
 #endif
 }
@@ -482,6 +486,12 @@ shim_value_is(shim_val_s* val, shim_type_t type)
       break;
     case SHIM_TYPE_EXTERNAL:
       ret = obj->IsExternal();
+#if ! NODE_VERSION_AT_LEAST(0, 11, 3)
+      if (ret == FALSE) {
+        Local<Value> v = obj->ToObject()->GetHiddenValue(hidden_private);
+        ret = v->IsExternal();
+      }
+#endif
       break;
     case SHIM_TYPE_DATE:
       ret = obj->IsDate();
@@ -560,7 +570,14 @@ shim_value_to(shim_ctx_s* ctx, shim_val_s* val, shim_type_t type,
       rval->handle = OBJ_TO_NUMBER(obj);
       break;
     case SHIM_TYPE_EXTERNAL:
+#if NODE_VERSION_AT_LEAST(0, 11, 3)
       rval->handle = OBJ_TO_EXTERNAL(obj);
+#else
+      if (obj->IsExternal())
+        rval->handle = obj.As<External>();
+      else
+        rval->handle = OBJ_TO_EXTERNAL(obj->ToObject()->GetHiddenValue(hidden_private));
+#endif
       break;
     case SHIM_TYPE_FUNCTION:
       rval->handle = OBJ_TO_FUNCTION(obj);
@@ -1496,15 +1513,18 @@ shim_buffer_length(shim_val_s* val)
 shim_val_s*
 shim_external_new(shim_ctx_s* ctx, void* data)
 {
-  SHIM__HANDLE_TYPE e;
+  Local<External> ext = External::New(data);
+  shim_val_s* ret;
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  e = External::New(data);
+  ret = shim_val_alloc(ctx, ext);
 #else
-  e = External::Wrap(data);
+  Local<Object> o = Object::New();
+  o->SetHiddenValue(hidden_private, ext);
+  ret = shim_val_alloc(ctx, o);
 #endif
 
-  return shim_val_alloc(ctx, e);
+  return ret;
 }
 
 /**
@@ -1515,16 +1535,16 @@ shim_external_new(shim_ctx_s* ctx, void* data)
 void*
 shim_external_value(shim_ctx_s* ctx, shim_val_s* obj)
 {
-  void* ret;
-  Local<External> e = SHIM__TO_LOCAL(obj->handle).As<External>();
+  Local<Value> v(SHIM__TO_LOCAL(obj->handle));
 
-#if NODE_VERSION_AT_LEAST(0, 11, 3)
-  ret = e->Value();
-#else
-  ret = External::Unwrap(e);
+#if ! NODE_VERSION_AT_LEAST(0, 11, 3)
+  v = v->ToObject()->GetHiddenValue(hidden_private);
 #endif
 
-  return ret;
+  if (v->IsUndefined() || !v->IsExternal())
+    return NULL;
+  else
+    return v.As<External>()->Value();
 }
 
 /**
