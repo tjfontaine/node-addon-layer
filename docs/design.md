@@ -35,8 +35,7 @@ do_something(shim_ctx_t* ctx, shim_args_t* args)
   shim_val_t* blah = shim_args_get(args, 0);
   /* grab the second argument which is the callback */
   shim_val_t* factory = shim_args_get(args, 1);
-  /* alloc space for the return value */
-  shim_val_t* rval = malloc(sizeof(shim_val_t*));
+  shim_val_t* rval;
 
   /* construct the set of arguments to be passed to the callback */
   shim_val_t* argv[] = {
@@ -46,7 +45,7 @@ do_something(shim_ctx_t* ctx, shim_args_t* args)
   };
 
   /* call the callback without specifying a `this` for the function */
-  shim_bool_t = shim_func_call_val(ctx, NULL, factory, 3, argv, ret);
+  shim_bool_t = shim_func_call_val(ctx, NULL, factory, 3, argv, &rval);
 
 
   /*

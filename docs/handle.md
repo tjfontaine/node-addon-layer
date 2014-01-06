@@ -8,7 +8,7 @@ want to know when it is necessary to clean up the underlying resources
 ~~~~~~~~~~~~~~~{.c}
 /* Called when the handle is about to be collected by the VM */
 void
-handle_free_cb(shim_val_t* phandle, void* data)
+handle_free_cb(shim_ctx_t*, shim_persistent_t* phandle, void* data)
 {
   /* unwrap the handle */
   void* handle = shim_external_value(phandle);
@@ -30,7 +30,7 @@ library_init(shim_ctx_t* ctx, shim_args_t* args)
   shim_val_t* ehandle = shim_external_new(ctx, handle);
 
   /* Turn the handle into a Persistent */
-  shim_val_t* phandle = shim_persistent_new(ctx, ehandle);
+  shim_persistent_t* phandle = shim_persistent_new(ctx, ehandle);
 
   /* Release the original wrapper */
   shim_value_release(ehandle);

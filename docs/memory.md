@@ -18,12 +18,8 @@ free the resources associated with the value.
  * Persistent
   - A value which is valid beyond the current scope
 
-::shim_val_t's will be a Local unless it was returned by
-shim_persistent_new(), in which case you'll be returned a ::shim_val_t that
-wraps a Persistent.
-
 Wrapped Persistents should **only** be released by calling
-shim_persistent_dispose(). Do **not** use shim_value_release().
+shim_persistent_dispose().
 
 If you want to be notified when the GC is about to collect a value, see
 shim_obj_make_weak().

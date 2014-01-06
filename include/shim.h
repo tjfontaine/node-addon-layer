@@ -65,6 +65,12 @@ typedef enum shim_type {
  * You should use shim_value_release
  */
 typedef struct shim_val_s shim_val_t;
+
+/**
+ * The opaque handle that represents a persistent value
+ *
+ * corresponds with shim_persistent_dispose
+ */
 typedef struct shim_persistent_s shim_persistent_t;
 
 /** The opaque handle that represents the currently executing context */
@@ -184,7 +190,12 @@ typedef struct shim_fspec_s {
 
 /** Check the value is of a given type */
 shim_bool_t shim_value_is(shim_val_t* val, shim_type_t type);
-/** Convert the value to a given type */
+/**
+ * Convert the value to a given type
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_value_to(shim_ctx_t* ctx, shim_val_t* val, shim_type_t type,
   shim_val_t** rval);
 
@@ -243,16 +254,39 @@ shim_bool_t shim_obj_set_private(shim_ctx_t* ctx, shim_val_t* obj, void* data);
 shim_bool_t shim_obj_set_funcs(shim_ctx_t* ctx, shim_val_t* recv,
   const shim_fspec_t* funcs);
 
-/** Get the value for the property name */
+/**
+ * Get the value for the property name
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_obj_get_prop_name(shim_ctx_t* ctx, shim_val_t* obj,
   const char* name, shim_val_t** rval);
-/** Get the value for the given id */
+
+/**
+ * Get the value for the given id
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_obj_get_prop_id(shim_ctx_t* ctx, shim_val_t* obj,
   uint32_t id, shim_val_t** rval);
-/** Get the value for the given symbol */
+
+/**
+ * Get the value for the given symbol
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_obj_get_prop_sym(shim_ctx_t* ctx, shim_val_t* obj,
   shim_val_t* sym, shim_val_t** rval);
-/** Get the arbitrary data associated with the object */
+
+/**
+ * Get the arbitrary data associated with the object
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_obj_get_private(shim_ctx_t* ctx, shim_val_t* obj, void** data);
 
 /**@}*/
@@ -269,6 +303,11 @@ shim_persistent_t* shim_persistent_new(shim_ctx_t* ctx, shim_val_t* val);
 /** Dispose a perisstent value */
 void shim_persistent_dispose(shim_persistent_t* val);
 
+/** Convert a persitent value to a local
+ *
+ * On success val will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_persistent_to_val(shim_ctx_t* ctx, shim_persistent_t* pval,
   shim_val_t** val);
 
@@ -295,24 +334,58 @@ shim_val_t* shim_func_new(shim_ctx_t* ctx, shim_func cfunc, size_t argc,
   int32_t flags, const char* name, void* data);
 
 
-/** Get the symbol from the object as a function and call it */
+/**
+ * Get the symbol from the object as a function and call it
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_func_call_sym(shim_ctx_t* ctx, shim_val_t* self,
   shim_val_t* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
-/** Get the function by name from an object and call it */
+
+/**
+ * Get the function by name from an object and call it
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_func_call_name(shim_ctx_t* ctx, shim_val_t* self,
   const char* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
-/** Call the given function */
+
+/**
+ * Call the given function
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_func_call_val(shim_ctx_t* ctx, shim_val_t* self,
   shim_val_t* func, size_t argc, shim_val_t** argv, shim_val_t** rval);
 
 
-/** Get a function by symbol and process the callback */
+/**
+ * Get a function by symbol and process the callback
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_make_callback_sym(shim_ctx_t* ctx, shim_val_t* self,
   shim_val_t* sym, size_t argc, shim_val_t** argv, shim_val_t** rval);
-/** Process the callback for the given function */
+
+/**
+ * Process the callback for the given function
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_make_callback_val(shim_ctx_t* ctx, shim_val_t* self,
   shim_val_t* fval, size_t argc, shim_val_t** argv, shim_val_t** rval);
-/** Process the callback for the given name */
+
+/**
+ * Process the callback for the given name
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_make_callback_name(shim_ctx_t* ctx, shim_val_t* obj,
   const char* name, size_t argc, shim_val_t** argv, shim_val_t** rval);
 
@@ -380,9 +453,16 @@ size_t shim_string_write_ascii(shim_val_t* val, char* buff, size_t start,
 shim_val_t* shim_array_new(shim_ctx_t* ctx, size_t len);
 /** Get the length of the given array */
 size_t shim_array_length(shim_val_t* arr);
-/** Get the value at the given index */
+
+/**
+ * Get the value at the given index
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_array_get(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx,
   shim_val_t** rval);
+
 /** Set the value at the given index */
 shim_bool_t shim_array_set(shim_ctx_t* ctx, shim_val_t* arr, int32_t idx,
   shim_val_t* val);
@@ -444,7 +524,13 @@ shim_bool_t shim_exception_pending(shim_ctx_t* ctx);
 void shim_exception_clear(shim_ctx_t* ctx);
 /** Set the pending exception */
 void shim_exception_set(shim_ctx_t* ctx, shim_val_t* val);
-/** Get the pending exception */
+
+/**
+ * Get the pending exception
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_exception_get(shim_ctx_t* ctx, shim_val_t** rval);
 
 /** Throw an error */
@@ -462,12 +548,24 @@ void shim_throw_range_error(shim_ctx_t* ctx, const char* msg, ...);
  * @{
  */
 
-/** Unpack the argument at the given index */
+/**
+ * Unpack the argument at the given index
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_unpack_one(shim_ctx_t* ctx, shim_args_t* args, uint32_t idx,
   shim_type_t type, void* rval);
-/** Unpack the value to the underlying type */
+
+/**
+ * Unpack the value to the underlying type
+ *
+ * On success rval will be allocated for you, and you are responsible for
+ * shim_value_release unless it is being used with shim_args_set_rval
+ */
 shim_bool_t shim_unpack_type(shim_ctx_t* ctx, shim_val_t* arg,
   shim_type_t type, void* rval);
+
 /** Unpack the arguments into underlying types */
 shim_bool_t shim_unpack(shim_ctx_t* ctx, shim_args_t* args, shim_type_t type,
   ...);

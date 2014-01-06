@@ -83,7 +83,7 @@ do {} while(0)
 do {} while(0)
 
 
-#if 1
+#if 0
 #define SHIM_DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define SHIM_DEBUG(...)
