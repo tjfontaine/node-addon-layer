@@ -42,6 +42,12 @@
 struct shim_val_s {
   SHIM__HANDLE_TYPE handle;
   enum shim_type type;
+
+  shim_val_s(SHIM__HANDLE_TYPE v, enum shim_type t = SHIM_TYPE_UNKNOWN) : handle(v), type(t) {
+  }
+
+  shim_val_s() : type(SHIM_TYPE_UNKNOWN) {
+  }
 };
 
 

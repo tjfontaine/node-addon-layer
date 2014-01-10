@@ -100,16 +100,6 @@ shim_context_cleanup(shim_ctx_s* ctx)
 }
 
 
-shim_val_s*
-shim_val_alloc(shim_ctx_s* ctx, SHIM__HANDLE_TYPE val,
-  shim_type_t type = SHIM_TYPE_UNKNOWN)
-{
-  shim_val_s* obj = new shim_val_s;
-  obj->handle = val;
-  obj->type = type;
-  return obj;
-}
-
 SHIM__HANDLE_TYPE*
 shim_vals_to_handles(size_t argc, shim_val_s** argv)
 {
@@ -121,21 +111,17 @@ shim_vals_to_handles(size_t argc, shim_val_s** argv)
       continue;
     }
 
-    SHIM__HANDLE_TYPE tmp;
-
     switch(argv[i]->type) {
       case SHIM_TYPE_UNDEFINED:
-        tmp = Undefined();
+        jsargs[i] = Undefined();
         break;
       case SHIM_TYPE_NULL:
-        tmp = Null();
+        jsargs[i] = Null();
         break;
       default:
-        tmp = argv[i]->handle;
+        jsargs[i] = argv[i]->handle;
         break;
     }
-
-    jsargs[i] = tmp;
   }
 
   return jsargs;
@@ -227,7 +213,7 @@ Static(const Arguments& args)
   sargs.argc = args.Length();
   sargs.argv = NULL;
   sargs.ret = shim_undefined();
-  sargs.self = shim_val_alloc(&ctx, args.This());
+  sargs.self = new shim_val_s(args.This());
   sargs.data = holder->data;
 
   size_t argv_len = sizeof(shim_val_s*) * sargs.argc;
@@ -238,7 +224,7 @@ Static(const Arguments& args)
   size_t i;
 
   for (i = 0; i < sargs.argc; i++) {
-    sargs.argv[i] = shim_val_alloc(&ctx, args[i]);
+    sargs.argv[i] = new shim_val_s(args[i]);
   }
 
   SHIM_DEBUG("SHIM CALL %s\n", *fname);
@@ -400,6 +386,9 @@ extern const char *shim_modname;
 
 void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 {
+  shim__undefined.type = SHIM_TYPE_UNDEFINED;
+  shim__null.type = SHIM_TYPE_NULL;
+
   SHIM_PROLOGUE(ctx);
   SHIM_CTX(ctx);
 
@@ -487,8 +476,10 @@ shim_value_is(shim_val_s* val, shim_type_t type)
     case SHIM_TYPE_EXTERNAL:
       ret = obj->IsExternal();
 #if ! NODE_VERSION_AT_LEAST(0, 11, 3)
-      if (ret == FALSE) {
-        Local<Value> v = obj->ToObject()->GetHiddenValue(hidden_private);
+      if (ret == FALSE && obj->IsObject()) {
+        Handle<Object> o = obj.As<Object>();
+
+        Local<Value> v = o->GetHiddenValue(hidden_private);
         ret = v->IsExternal();
       }
 #endif
@@ -615,8 +606,7 @@ shim_null()
 shim_val_s*
 shim_value_alloc(void)
 {
-  shim_val_s *val = new shim_val_s;
-  bzero(val, sizeof (*val));
+  shim_val_s *val = new shim_val_s();
   return (val);
 }
 
@@ -652,7 +642,7 @@ shim_obj_new(shim_ctx_s* ctx, shim_val_s* klass, shim_val_s* proto)
   if (proto != NULL)
     obj->SetPrototype(proto->handle->ToObject());
 
-  return shim_val_alloc(ctx, obj);
+  return new shim_val_s(obj);
 }
 
 
@@ -688,7 +678,7 @@ shim_obj_clone(shim_ctx_s* ctx, shim_val_s* src)
 #else
   Local<Value> dst = Local<Value>::New(src->handle);
 #endif
-  return shim_val_alloc(ctx, dst);
+  return new shim_val_s(dst);
 }
 
 /**
@@ -847,7 +837,7 @@ shim_obj_get_prop_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(String::NewSymbol(name));
-  *rval = shim_val_alloc(ctx, val);
+  *rval = new shim_val_s(val);
   return TRUE;
 }
 
@@ -865,7 +855,7 @@ shim_obj_get_prop_id(shim_ctx_s* ctx, shim_val_s* obj, uint32_t idx,
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(idx);
-  *rval = shim_val_alloc(ctx, val);
+  *rval = new shim_val_s(val);
   return TRUE;
 }
 
@@ -883,7 +873,7 @@ shim_obj_get_prop_sym(shim_ctx_s* ctx, shim_val_s* obj, shim_val_s* sym,
 {
   Local<Object> jsobj = OBJ_TO_OBJECT(SHIM__TO_LOCAL(obj->handle));
   Local<Value> val = jsobj->Get(sym->handle);
-  *rval = shim_val_alloc(ctx, val);
+  *rval = new shim_val_s(val);
   return TRUE;
 }
 
@@ -940,9 +930,9 @@ shim_bool_t
 shim_persistent_to_val(shim_ctx_s* ctx, shim_persistent_s* pval, shim_val_s** val)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 9)
-  *val = shim_val_alloc(ctx, PersistentToLocal(ctx->isolate, pval->handle));
+  *val = new shim_val_s(PersistentToLocal(ctx->isolate, pval->handle));
 #else
-  *val = shim_val_alloc(ctx, Local<Value>::New(pval->handle));
+  *val = new shim_val_s(Local<Value>::New(pval->handle));
 #endif
   return TRUE;
 }
@@ -1022,7 +1012,7 @@ shim_func_new(shim_ctx_s* ctx, shim_func cfunc, size_t argc, int32_t flags,
   Local<FunctionTemplate> ft = FunctionTemplate::New(shim::Static, ext);
   Local<Function> fh = ft->GetFunction();
   fh->SetName(String::NewSymbol(name));
-  return shim_val_alloc(ctx, fh);
+  return new shim_val_s(fh);
 }
 
 /**
@@ -1045,7 +1035,7 @@ shim_func_call_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
   Handle<Value> ret = shim_call_func(recv, str, argc, argv);
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1069,7 +1059,7 @@ shim_func_call_name(shim_ctx_s* ctx, shim_val_s* self, const char* name,
   Handle<Value> ret = shim_call_func(recv, String::NewSymbol(name), argc, argv);
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1101,7 +1091,7 @@ shim_func_call_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* func,
   Handle<Value> ret = shim_call_func(recv, fn, argc, argv);
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1131,7 +1121,7 @@ shim_make_callback_sym(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* sym,
   delete jsargs;
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1167,7 +1157,7 @@ shim_make_callback_val(shim_ctx_s* ctx, shim_val_s* self, shim_val_s* fval,
   delete jsargs;
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1195,7 +1185,7 @@ shim_make_callback_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
   delete jsargs;
 
   if (rval != NULL)
-    *rval = shim_val_alloc(ctx, ret);
+    *rval = new shim_val_s(ret);
 
   return !ctx->trycatch->HasCaught();
 }
@@ -1208,7 +1198,7 @@ shim_make_callback_name(shim_ctx_s* ctx, shim_val_s* obj, const char* name,
 shim_val_s*
 shim_number_new(shim_ctx_s* ctx, double d)
 {
-  return shim_val_alloc(ctx, Number::New(d));
+  return new shim_val_s(Number::New(d));
 }
 
 /**
@@ -1229,7 +1219,7 @@ shim_number_value(shim_val_s* val)
 shim_val_s*
 shim_integer_new(shim_ctx_s* ctx, int32_t i)
 {
-  return shim_val_alloc(ctx, Integer::New(i));
+  return new shim_val_s(Integer::New(i));
 }
 
 /**
@@ -1240,7 +1230,7 @@ shim_integer_new(shim_ctx_s* ctx, int32_t i)
 shim_val_s*
 shim_integer_uint(shim_ctx_s* ctx, uint32_t i)
 {
-  return shim_val_alloc(ctx, Integer::NewFromUnsigned(i));
+  return new shim_val_s(Integer::NewFromUnsigned(i));
 }
 
 /**
@@ -1280,7 +1270,7 @@ shim_integer_uint32_value(shim_val_s* val)
 shim_val_s*
 shim_string_new(shim_ctx_s* ctx)
 {
-  return shim_val_alloc(ctx, String::Empty());
+  return new shim_val_s(String::Empty());
 }
 
 /**
@@ -1291,7 +1281,7 @@ shim_string_new(shim_ctx_s* ctx)
 shim_val_s*
 shim_string_new_copy(shim_ctx_s* ctx, const char* data)
 {
-  return shim_val_alloc(ctx, String::New(data));
+  return new shim_val_s(String::New(data));
 }
 
 /**
@@ -1303,7 +1293,7 @@ shim_string_new_copy(shim_ctx_s* ctx, const char* data)
 shim_val_s*
 shim_string_new_copyn(shim_ctx_s* ctx, const char* data, size_t len)
 {
-  return shim_val_alloc(ctx, String::New(data, len));
+  return new shim_val_s(String::New(data, len));
 }
 
 /**
@@ -1366,7 +1356,7 @@ shim_string_write_ascii(shim_val_s* val, char* buff, size_t start, size_t len,
 shim_val_s*
 shim_array_new(shim_ctx_s* ctx, size_t len)
 {
-  return shim_val_alloc(ctx, Array::New(len));
+  return new shim_val_s(Array::New(len));
 }
 
 /**
@@ -1389,7 +1379,7 @@ shim_array_length(shim_val_s* arr)
 shim_bool_t
 shim_array_get(shim_ctx_s* ctx, shim_val_s* arr, int32_t idx, shim_val_s** rval)
 {
-  *rval = shim_val_alloc(ctx, OBJ_TO_ARRAY(SHIM__TO_LOCAL(arr->handle))->Get(idx));
+  *rval = new shim_val_s(OBJ_TO_ARRAY(SHIM__TO_LOCAL(arr->handle))->Get(idx));
   return TRUE;
 }
 
@@ -1415,9 +1405,9 @@ shim_val_s*
 shim_buffer_new(shim_ctx_s* ctx, size_t len)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  return shim_val_alloc(ctx, node::Buffer::New(len));
+  return new shim_val_s(node::Buffer::New(len));
 #else
-  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(len)->handle_));
+  return new shim_val_s(SHIM__TO_LOCAL(Buffer::New(len)->handle_));
 #endif
 }
 
@@ -1431,11 +1421,11 @@ shim_val_s*
 shim_buffer_new_copy(shim_ctx_s* ctx, const char* data, size_t len)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  return shim_val_alloc(ctx, node::Buffer::New(data, len));
+  return new shim_val_s(node::Buffer::New(data, len));
 #elif NODE_VERSION_AT_LEAST(0, 10, 0)
-  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(data, len)->handle_));
+  return new shim_val_s(SHIM__TO_LOCAL(Buffer::New(data, len)->handle_));
 #else
-  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New((char*)data, len)->handle_));
+  return new shim_val_s(SHIM__TO_LOCAL(Buffer::New((char*)data, len)->handle_));
 #endif
 }
 
@@ -1454,9 +1444,9 @@ shim_buffer_new_external(shim_ctx_s* ctx, char* data, size_t len,
   shim_buffer_free cb, void* hint)
 {
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  return shim_val_alloc(ctx, node::Buffer::New(data, len, cb, hint));
+  return new shim_val_s(node::Buffer::New(data, len, cb, hint));
 #else
-  return shim_val_alloc(ctx, SHIM__TO_LOCAL(Buffer::New(data, len, cb, hint)->handle_));
+  return new shim_val_s(SHIM__TO_LOCAL(Buffer::New(data, len, cb, hint)->handle_));
 #endif
 }
 
@@ -1517,11 +1507,11 @@ shim_external_new(shim_ctx_s* ctx, void* data)
   shim_val_s* ret;
 
 #if NODE_VERSION_AT_LEAST(0, 11, 3)
-  ret = shim_val_alloc(ctx, ext);
+  ret = new shim_val_s(ext);
 #else
   Local<Object> o = Object::New();
   o->SetHiddenValue(hidden_private, ext);
-  ret = shim_val_alloc(ctx, o);
+  ret = new shim_val_s(o, SHIM_TYPE_EXTERNAL);
 #endif
 
   return ret;
@@ -1538,7 +1528,12 @@ shim_external_value(shim_ctx_s* ctx, shim_val_s* obj)
   Local<Value> v(SHIM__TO_LOCAL(obj->handle));
 
 #if ! NODE_VERSION_AT_LEAST(0, 11, 3)
-  v = v->ToObject()->GetHiddenValue(hidden_private);
+  if (v->IsObject()) {
+    Handle<Object> o = v.As<Object>();
+
+    if (!o->IsUndefined() && !o.IsEmpty())
+      v = o->GetHiddenValue(hidden_private);
+  }
 #endif
 
   if (v->IsUndefined() || !v->IsExternal())
@@ -1560,7 +1555,7 @@ shim_error_new(shim_ctx_s* ctx, const char* msg, ...)
   va_start(ap, msg);
   SHIM__HANDLE_TYPE err = shim::shim_format_error(ctx, SHIM_ERR_ERROR, msg, ap);
   va_end(ap);
-  return shim_val_alloc(ctx, err);
+  return new shim_val_s(err);
 }
 
 /**
@@ -1576,7 +1571,7 @@ shim_error_type_new(shim_ctx_s* ctx, const char* msg, ...)
   va_start(ap, msg);
   SHIM__HANDLE_TYPE err = shim::shim_format_error(ctx, SHIM_ERR_TYPE, msg, ap);
   va_end(ap);
-  return shim_val_alloc(ctx, err);
+  return new shim_val_s(err);
 }
 
 /**
@@ -1592,7 +1587,7 @@ shim_error_range_new(shim_ctx_s* ctx, const char* msg, ...)
   va_start(ap, msg);
   SHIM__HANDLE_TYPE err = shim::shim_format_error(ctx, SHIM_ERR_RANGE, msg, ap);
   va_end(ap);
-  return shim_val_alloc(ctx, err);
+  return new shim_val_s(err);
 }
 
 /**
@@ -1624,7 +1619,7 @@ shim_exception_set(shim_ctx_s* ctx, shim_val_s* val)
 shim_bool_t
 shim_exception_get(shim_ctx_s* ctx, shim_val_s** rval)
 {
-  *rval = shim_val_alloc(ctx, ctx->trycatch->Exception());
+  *rval = new shim_val_s(ctx->trycatch->Exception());
   return TRUE;
 }
 
@@ -1923,9 +1918,6 @@ __attribute__((constructor)) void shim_module_preinit(void)
 	(void) snprintf(namebuf, sizeof (namebuf), "%s_module", shim_modname);
 	module = (struct shim_module_struct *)dlsym(RTLD_SELF, namebuf);
 	module->func = (node_register_func)shim_module_initialize;
-
-  shim__undefined.type = SHIM_TYPE_UNDEFINED;
-  shim__null.type = SHIM_TYPE_NULL;
 }
 
 } /* end extern "C" */
