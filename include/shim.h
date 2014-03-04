@@ -83,7 +83,13 @@ typedef struct shim_args_s shim_args_t;
 typedef int shim_bool_t;
 
 /** Entry point from node to register the addon layer */
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+typedef void (* node_register_func)(void*, void*, void*);
+#else
 typedef void (* node_register_func)(void*, void*);
+#endif
+/** The declaration of the addon layer entry point */
+void shim_module_initialize(void*, void*);
 
 /** Signature of for how a module will be initialized */
 typedef int (* register_func)(shim_ctx_t*, shim_val_t*, shim_val_t*);
@@ -96,6 +102,9 @@ extern register_func shim_initialize;
  */
 struct shim_module_struct {
   int version;              /**< Indicates the node module ABI */
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+  unsigned int flags;
+#endif
   void* handle;             /**< Used internally by node */
   const char* fname;        /**< Filename of module */
   node_register_func func;  /**< Always represents the C++ entry point */
@@ -103,6 +112,10 @@ struct shim_module_struct {
   void* context_func;
 #endif
   const char* mname;        /**< Module name */
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+  void* priv;
+  void* list;
+#endif
 };
 
 
@@ -126,12 +139,24 @@ struct shim_module_struct {
  * \def SHIM_MODULE(name, func)
  * Use this to define the \a name and \a func entry point of your module
  */
-#if NODE_VERSION_AT_LEAST(0, 11, 9)
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+#define SHIM_MODULE_INIT(name) {                                              \
+  SHIM_NODE_ABI,                                                              \
+  0,                                                                          \
+  NULL,                                                                       \
+  __FILE__,                                                                   \
+  (node_register_func)&shim_module_initialize,                                \
+  NULL,                                                                       \
+  #name,                                                                      \
+  NULL,                                                                       \
+  NULL,                                                                       \
+};
+#elif NODE_VERSION_AT_LEAST(0, 11, 9)
 #define SHIM_MODULE_INIT(name) {                                              \
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  NULL,                                                                       \
+  (node_register_func)&shim_module_initialize,                                \
   NULL,                                                                       \
   #name,                                                                      \
 };
@@ -140,15 +165,31 @@ struct shim_module_struct {
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  NULL,                                                                       \
+  (node_register_func)&shim_module_initialize,                                \
   #name,                                                                      \
 };
 #endif
 
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+
+#define SHIM_C_CTOR(fn)                                                       \
+  static void fn(void) __attribute__((constructor));                          \
+  static void fn(void)
+
+extern void node_module_register(struct shim_module_struct*);
+
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
 struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)            \
-const char* shim_modname = # name ;
+SHIM_C_CTOR(name ## _module_register) {                                       \
+  node_module_register(&(name ## _module));                                   \
+}
+
+#else
+#define SHIM_MODULE(name, func)                                               \
+register_func shim_initialize = &func;                                        \
+struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)
+#endif
 
 /** The signature of the entry point for exported functions */
 typedef int (* shim_func)(shim_ctx_t*, shim_args_t*);

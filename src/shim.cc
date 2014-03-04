@@ -25,9 +25,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <strings.h>
-#include <dlfcn.h>
-
 #include "uv.h"
 
 #include "shim-impl.h"
@@ -384,7 +381,13 @@ extern "C"
 {
 extern const char *shim_modname;
 
-void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
+void shim_module_initialize_cpp(Handle<Object> exports,
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+                                Handle<Value> module,
+                                void* priv)
+#else
+                                Handle<Value> module)
+#endif
 {
   shim__undefined.type = SHIM_TYPE_UNDEFINED;
   shim__null.type = SHIM_TYPE_NULL;
@@ -419,6 +422,15 @@ void shim_module_initialize(Handle<Object> exports, Handle<Value> module)
 
   shim_context_cleanup(&ctx);
 }
+
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+void (*shim_module_initialize)(void *, void *, void *) =
+    (void (*)(void *, void *, void *))shim_module_initialize_cpp;
+#else
+void (*shim_module_initialize)(void *, void *) =
+    (void (*)(void *, void *))shim_module_initialize_cpp;
+#endif
+
 
 /* TODO abstract out so we don't need multiple temporaries */
 
@@ -1910,16 +1922,7 @@ shim_type_str(shim_type_t type)
   return ("INVALID_TYPE");
 }
 
-__attribute__((constructor)) void shim_module_preinit(void)
-{
-	struct shim_module_struct *module;
-	char namebuf[256];
 
-	(void) snprintf(namebuf, sizeof (namebuf), "%s_module", shim_modname);
-	module = (struct shim_module_struct *)dlsym(RTLD_SELF, namebuf);
-	module->func = (node_register_func)shim_module_initialize;
-}
+} /* extern "C" */
 
-} /* end extern "C" */
-
-} /* end namespace */
+} /* namespace shim */
