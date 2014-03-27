@@ -188,7 +188,8 @@ SHIM_C_CTOR(name ## _module_register) {                                       \
 #else
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
-struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)
+struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)            \
+const char* shim_modname = # name ;
 #endif
 
 /** The signature of the entry point for exported functions */
