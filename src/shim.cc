@@ -423,14 +423,7 @@ void shim_module_initialize_cpp(Handle<Object> exports,
   shim_context_cleanup(&ctx);
 }
 
-#if NODE_VERSION_AT_LEAST(0, 11, 10)
-void (*shim_module_initialize)(void *, void *, void *) =
-    (void (*)(void *, void *, void *))shim_module_initialize_cpp;
-#else
-void (*shim_module_initialize)(void *, void *) =
-    (void (*)(void *, void *))shim_module_initialize_cpp;
-#endif
-
+NODE_MODULE(shim, shim_module_initialize_cpp);
 
 /* TODO abstract out so we don't need multiple temporaries */
 

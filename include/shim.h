@@ -88,8 +88,13 @@ typedef void (* node_register_func)(void*, void*, void*);
 #else
 typedef void (* node_register_func)(void*, void*);
 #endif
+
 /** The declaration of the addon layer entry point */
+#if NODE_VERSION_AT_LEAST(0, 11, 10)
+void shim_module_initialize(void*, void*, void*);
+#else
 void shim_module_initialize(void*, void*);
+#endif
 
 /** Signature of for how a module will be initialized */
 typedef int (* register_func)(shim_ctx_t*, shim_val_t*, shim_val_t*);
@@ -145,7 +150,7 @@ struct shim_module_struct {
   0,                                                                          \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  (node_register_func)&shim_module_initialize,                                \
+  NULL,                                                                       \
   NULL,                                                                       \
   #name,                                                                      \
   NULL,                                                                       \
@@ -156,7 +161,7 @@ struct shim_module_struct {
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  (node_register_func)&shim_module_initialize,                                \
+  NULL,                                                                       \
   NULL,                                                                       \
   #name,                                                                      \
 };
@@ -165,7 +170,7 @@ struct shim_module_struct {
   SHIM_NODE_ABI,                                                              \
   NULL,                                                                       \
   __FILE__,                                                                   \
-  (node_register_func)&shim_module_initialize,                                \
+  NULL,                                                                       \
   #name,                                                                      \
 };
 #endif
