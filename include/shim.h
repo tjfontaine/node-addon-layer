@@ -181,14 +181,17 @@ struct shim_module_struct {
   static void fn(void) __attribute__((constructor));                          \
   static void fn(void)
 
-extern void node_module_register(struct shim_module_struct*);
+extern void node_module_register(void *);
 
 #define SHIM_MODULE(name, func)                                               \
 register_func shim_initialize = &func;                                        \
 struct shim_module_struct name ## _module = SHIM_MODULE_INIT(name)            \
+
+#if 0
 SHIM_C_CTOR(name ## _module_register) {                                       \
   node_module_register(&(name ## _module));                                   \
 }
+#endif
 
 #else
 #define SHIM_MODULE(name, func)                                               \
