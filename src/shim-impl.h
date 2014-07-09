@@ -86,6 +86,7 @@ extern shim_val_s shim__null;
 
 typedef struct weak_baton_s {
   shim_weak_cb weak_cb;
+  shim_persistent_t *persistent;
   void* data;
 } weak_baton_t;
 

@@ -1009,9 +1009,7 @@ common_weak_cb(const v8::WeakCallbackData<Value, weak_baton_t>& data)
   SHIM_CTX(ctx);
 
   weak_baton_t* baton = data.GetParameter();
-  shim_persistent_s* tmp = new shim_persistent_s;
-  tmp->handle.Reset(ctx_isolate, data.GetValue());
-  baton->weak_cb(&ctx, tmp, baton->data);
+  baton->weak_cb(&ctx, baton->persistent, baton->data);
   delete baton;
 }
 #else
@@ -1025,18 +1023,10 @@ common_weak_cb(Persistent<Value> obj, void* data)
   weak_baton_t* baton = static_cast<weak_baton_t*>(data);
 #endif
 
-  shim_persistent_s* tmp = new shim_persistent_s;
-
   SHIM_PROLOGUE(ctx);
   SHIM_CTX(ctx);
 
-#if NODE_VERSION_AT_LEAST(0, 11, 9)
-  tmp->handle.Reset(ctx_isolate, PersistentToLocal<Value>(ctx_isolate, *pobj));
-#else
-  tmp->handle = obj;
-#endif
-
-  baton->weak_cb(&ctx, tmp, baton->data);
+  baton->weak_cb(&ctx, baton->persistent, baton->data);
   delete baton;
 }
 #endif
@@ -1055,6 +1045,7 @@ shim_obj_make_weak(shim_ctx_s* ctx, shim_persistent_s* val, void* data,
   weak_baton_s *baton = new weak_baton_t;
   baton->weak_cb = weak_cb;
   baton->data = data;
+  baton->persistent = val;
 
 #if NODE_VERSION_AT_LEAST(0, 11, 11)
   val->handle.SetWeak(baton, common_weak_cb);
