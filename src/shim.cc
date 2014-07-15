@@ -2058,6 +2058,23 @@ shim_type_str(shim_type_t type)
   return ("INVALID_TYPE");
 }
 
+#if !NODE_VERSION_AT_LEAST(0, 11, 10)
+
+#include <strings.h>
+#include <dlfcn.h>
+
+__attribute__((constructor)) void shim_module_preinit(void)
+{
+   struct shim_module_struct *module;
+   char namebuf[256];
+ 
+   (void) snprintf(namebuf, sizeof (namebuf), "%s_module", shim_modname);
+   module = (struct shim_module_struct *)dlsym(RTLD_SELF, namebuf);
+   module->func = (node_register_func)shim_module_initialize;
+}
+
+#endif
+
 
 } /* extern "C" */
 
