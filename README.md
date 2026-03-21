@@ -1,3 +1,5 @@
+> **⚠️ This project is archived and no longer maintained.**
+
 # addon layer
 
 This is a thin shim layer for node that provides a C API somewhat inspired by
